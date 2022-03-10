@@ -9,11 +9,11 @@ export type SchemaRegistryParams = {
 }
 
 export class SchemaRegistry {
-    protocol: string = "";
-    hostname: string = "";
-    port: string = "";
+    protocol: string;
+    hostname: string;
+    port: string;
 
-    SchemaRegistry(args: SchemaRegistryParams) {
+    constructor(args: SchemaRegistryParams) {
         this.protocol = args.protocol;
         this.hostname = args.hostname;
         this.port = args.port;
