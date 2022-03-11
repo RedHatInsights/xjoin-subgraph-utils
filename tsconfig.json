@@ -4,10 +4,9 @@
     "strictNullChecks": true,
     "target": "es2021", 
     "outDir": "dist",
-    "module": "commonjs",
+    "module": "es2020",
     "moduleResolution": "node",
     "sourceMap": true,
-    "lib": ["es2015", "dom"],
     "rootDir": "src",
     "experimentalDecorators": true,
     "esModuleInterop": true

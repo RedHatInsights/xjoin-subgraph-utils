@@ -1,15 +1,19 @@
 {
   "name": "xjoin-subgraph-utils",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Utilities to be used with projects based on the xjoin subgraph template.",
   "license": "MIT",
   "author": "Chris Kyrouac <ckyrouac@redhat.com>",
   "homepage": "https://github.com/RedHatInsights/xjoin-subgraph-utils#readme",
-  "main": "dist/index.js",
+  "exports": "./dist/index.js",
   "types": "dist/index.d.ts",
+  "type": "module",
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build"
