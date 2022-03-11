@@ -22,6 +22,7 @@
     "url": "https://github.com/RedHatInsights/xjoin-subgraph-utils"
   },
   "dependencies": {
+    "@types/got": "^9.6.12",
     "got": "^12.0.1",
     "typescript": "^4.6.2"
   }
