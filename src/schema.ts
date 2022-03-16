@@ -1,5 +1,5 @@
 import got from "got";
-import {XJoinSubgraphUtilsError} from "./errors";
+import {XJoinSubgraphUtilsError} from "./errors.js";
 
 export const ARTIFACTS_PATH = 'apis/registry/v2/groups/default/artifacts'
 
