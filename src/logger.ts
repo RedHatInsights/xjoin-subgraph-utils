@@ -12,11 +12,9 @@ const transports = [
     new winston.transports.Console(),
 ]
 
-const Logger = winston.createLogger({
+export const Logger = winston.createLogger({
     level: 'info',
     levels,
     format: winston.format.json(),
     transports,
 })
-
-export default Logger

@@ -35,9 +35,7 @@ const registerGraphQLToken = () => {
 
 registerGraphQLToken();
 
-const morganMiddleware = morgan(
+export const morganMiddleware = morgan(
     ":method :url :status :res[content-length] - :response-time ms\n:graphql-query",
     { stream, skip }
 );
-
-export default morganMiddleware;
