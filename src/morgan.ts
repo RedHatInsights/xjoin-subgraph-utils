@@ -2,7 +2,7 @@ import morgan, { StreamOptions } from "morgan";
 
 import { IncomingMessage } from "http";
 
-import Logger from "./logger.js";
+import {Logger} from "./logger.js";
 import * as http from "http";
 
 interface Request extends IncomingMessage {
