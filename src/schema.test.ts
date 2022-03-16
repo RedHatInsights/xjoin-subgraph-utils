@@ -1,6 +1,5 @@
 import {SchemaRegistry, ARTIFACTS_PATH} from './schema.js'
 import nock from 'nock'
-import {XJoinSubgraphUtilsError} from "./errors";
 
 const SR_PROTOCOL = 'http'
 const SR_HOSTNAME = 'localhost'
