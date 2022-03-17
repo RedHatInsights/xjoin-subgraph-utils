@@ -1,6 +1,6 @@
 {
   "name": "xjoin-subgraph-utils",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Utilities to be used with projects based on the xjoin subgraph template.",
   "license": "MIT",
   "author": "Chris Kyrouac <ckyrouac@redhat.com>",
