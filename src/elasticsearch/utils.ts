@@ -1,4 +1,4 @@
-import {ApolloError, UserInputError} from "apollo-server-express";
+import {UserInputError} from "apollo-server-express";
 
 export function checkMin(min: number, value: number | null | undefined): void {
     if (value === null || value === undefined) {
@@ -40,19 +40,3 @@ export function defaultValue(value: number | undefined | null, def: number): num
 export function extractPage(list: any, limit: number, offset: number): any {
     return list.slice(offset, offset + limit);
 }
-
-export class ElasticSearchError extends ApolloError {
-    constructor(originalError: any, message = 'Elastic search error', code = 'ELASTIC_SEARCH_ERROR') {
-        super(message, code, {originalError});
-    }
-}
-
-export class ResultWindowError extends ElasticSearchError {
-    constructor(originalError: any,
-                message = 'Request could not be completed because the page is too deep',
-                code = 'REQUEST_WINDOW_ERROR')
-    {
-        super(originalError, message, code);
-    }
-}
-
