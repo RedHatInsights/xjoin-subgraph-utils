@@ -1,5 +1,5 @@
-import {inputName} from "../avro";
-import {GraphqlSchema} from "./graphqlschema";
+import {inputName} from "../avro/avroUtils.js";
+import {GraphqlSchema} from "./graphqlschema.js";
 import {SelectionNode} from "graphql";
 
 //recursive function to build list of fields that will be included in the elasticsearch response

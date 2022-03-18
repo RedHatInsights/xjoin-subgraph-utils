@@ -1,5 +1,5 @@
 import {Expose, Type as ClassType} from "class-transformer";
-import {inputName} from "./avroUtils";
+import {inputName} from "./avroUtils.js";
 
 export class AvroSchema  {
     @ClassType(() => Type) //TODO: handle all three types
