@@ -1,5 +1,4 @@
-import config from "config";
-import { Logger } from "xjoin-subgraph-utils";
+import { Logger } from "../logging";
 import {
     ESAggregateParams,
     ESAggregateResponse,
@@ -7,23 +6,19 @@ import {
     ESSearchResponse
 } from "./types";
 
-const {Client} = require('@elastic/elasticsearch')
+import {Client, ClientOptions} from '@elastic/elasticsearch';
 
 export class ElasticSearchClient {
     client: any;
+    index: string;
 
-    constructor() {
-        this.client = new Client({
-            node: `${config.get('ElasticSearch.URL')}`,
-            auth: {
-                username: config.get('ElasticSearch.Username'),
-                password: config.get('ElasticSearch.Password')
-            }
-        });
+    constructor(clientOptions: ClientOptions, index: string) {
+        this.client = new Client(clientOptions);
+        this.index = index;
     }
 
     async aggregateQuery(params: ESAggregateParams): Promise<ESAggregateResponse> {
-        const order = []
+        const order: Record<any,any>[] = []
         if (params.order_by === 'count') {
             order.push({'_count': params.order_how})
         } else if (params.order_by === 'value') {
@@ -62,7 +57,7 @@ export class ElasticSearchClient {
         }
 
         const searchRequest: any = {
-            index: config.get('ElasticSearch.Index'),
+            index: this.index,
             body: requestBody
         };
 
@@ -101,7 +96,7 @@ export class ElasticSearchClient {
         }
 
         const searchRequest: any = {
-            index: config.get('ElasticSearch.Index'),
+            index: this.index,
             filter_path: 'hits.hits._source,hits.total',
             body: {}
         };
