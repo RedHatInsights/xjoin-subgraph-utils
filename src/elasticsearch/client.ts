@@ -1,4 +1,4 @@
-import { Logger } from "../logging";
+import { Logger } from "../logging/logger.js";
 import {
     ESAggregateParams,
     ESAggregateResponse,
