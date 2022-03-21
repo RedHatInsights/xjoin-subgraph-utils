@@ -7,6 +7,7 @@ import {
 } from "./types";
 
 import {Client, ClientOptions} from '@elastic/elasticsearch';
+import {ElasticSearchError, ResultWindowError} from "./errors.js";
 
 export class ElasticSearchClient {
     client: any;
@@ -144,5 +145,43 @@ export class ElasticSearchClient {
             throw e
         }
         return response;
+    }
+    
+    async runQuery(query: any): Promise<any> {
+        Logger.debug('executing query', ['query', query]);
+
+        try {
+            const result = await this.client.search(query);
+            Logger.debug('query finished', result);
+            return result;
+        } catch (err) {
+            Logger.error(err);
+
+            const reason = err.meta.body.error.root_cause[0].reason || ''
+            if (reason.startsWith('Result window is too large')) {
+                // check if the request should have succeeded (eg. the requested page
+                // contains hosts that should be able to be queried)
+                const requestedNumber = query.body.from;
+
+                query.body.from = 0;
+                query.body.size = 0;
+
+                const countQueryRes = await this.client.search(query);
+
+                const hits = countQueryRes.body.hits.total.value;
+
+                // only return the request window error if the requested page should
+                // have contained at least one host
+                if (hits >= requestedNumber) {
+                    throw new ResultWindowError(err);
+                }
+
+                // return an empty response (same behavior as when there is no host
+                // at the specified offset within result window)
+                return countQueryRes;
+            }
+
+            throw new ElasticSearchError(err);
+        }
     }
 }
