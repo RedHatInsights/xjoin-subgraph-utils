@@ -69,7 +69,8 @@ export class SchemaRegistry {
                         body: schema,
                         headers: {
                             'Content-Type': 'application/graphql',
-                            'X-Registry-ArtifactType': 'GRAPHQL'
+                            'X-Registry-ArtifactType': 'GRAPHQL',
+                            'X-Registry-ArtifactId': schemaName
                         }
                     }
                 )
