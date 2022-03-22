@@ -12,7 +12,7 @@ export function graphqlSelectionToESSourceFields(selectionSet: Readonly<Selectio
         if (dataFieldSelection.selectionSet !== undefined) {
             const newParent = [...parent];
             newParent.push(dataFieldSelection.name.value)
-            sourceFields = this.graphqlSelectionToESSourceFields(
+            sourceFields = graphqlSelectionToESSourceFields(
                 dataFieldSelection.selectionSet.selections, sourceFields, newParent);
         } else {
             if (parent.length > 0) {
@@ -40,7 +40,7 @@ export function graphqlFiltersToESFilters(parent: string[], queryFilters: Record
             //recurse into nested filter
             const newParent = [...parent];
             newParent.push(queryFilterKey)
-            esFilters = this.graphqlFiltersToESFilters(newParent, queryFilters[queryFilterKey], esFilters, schema);
+            esFilters = graphqlFiltersToESFilters(newParent, queryFilters[queryFilterKey], esFilters, schema);
         }
     }
 
