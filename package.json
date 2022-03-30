@@ -1,6 +1,6 @@
 {
   "name": "xjoin-subgraph-utils",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "Utilities to be used with projects based on the xjoin subgraph template.",
   "license": "MIT",
   "author": "Chris Kyrouac <ckyrouac@redhat.com>",
@@ -27,7 +27,7 @@
     "url": "https://github.com/RedHatInsights/xjoin-subgraph-utils"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^7.1.0",
+    "@elastic/elasticsearch": "7.1.0",
     "@types/got": "^9.6.12",
     "apollo-server-express": "^3.6.4",
     "camelcase": "^6.3.0",
