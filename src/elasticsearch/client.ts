@@ -155,7 +155,7 @@ export class ElasticSearchClient {
             Logger.debug('query finished', result);
             return result;
         } catch (err) {
-            Logger.error(err);
+            Logger.debug(err);
 
             const reason = err?.meta?.body?.error?.root_cause[0]?.reason || ''
             if (reason.startsWith('Result window is too large')) {
@@ -180,7 +180,7 @@ export class ElasticSearchClient {
                 return countQueryRes;
             }
 
-            throw new ElasticSearchError(err);
+            throw err;
         }
     }
 }
