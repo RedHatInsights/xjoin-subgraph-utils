@@ -157,18 +157,17 @@ export class ElasticSearchClient {
         } catch (err) {
             Logger.error(err);
 
-            const reason = err.meta.body.error.root_cause[0].reason || ''
+            const reason = err?.meta?.body?.error?.root_cause[0]?.reason || ''
             if (reason.startsWith('Result window is too large')) {
                 // check if the request should have succeeded (eg. the requested page
                 // contains hosts that should be able to be queried)
-                const requestedNumber = query.body.from;
+                const requestedNumber = query?.body?.from || 0;
 
                 query.body.from = 0;
                 query.body.size = 0;
 
                 const countQueryRes = await this.client.search(query);
-
-                const hits = countQueryRes.body.hits.total.value;
+                const hits = countQueryRes?.body?.hits?.total?.value || 0;
 
                 // only return the request window error if the requested page should
                 // have contained at least one host
