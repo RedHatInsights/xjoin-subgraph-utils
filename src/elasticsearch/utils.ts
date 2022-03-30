@@ -37,6 +37,6 @@ export function defaultValue(value: number | undefined | null, def: number): num
     return value;
 }
 
-export function extractPage(list: any, limit: number, offset: number): any {
+export function extractPage(list: [], limit: number, offset: number): any {
     return list.slice(offset, offset + limit);
 }
