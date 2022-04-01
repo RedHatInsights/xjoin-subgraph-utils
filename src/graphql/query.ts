@@ -3,7 +3,7 @@ import {GraphqlSchema} from "./graphqlschema.js";
 import {SelectionNode} from "graphql";
 
 //recursive function to build list of fields that will be included in the elasticsearch response
-export function graphqlSelectionToESSourceFields(selectionSet: Readonly<SelectionNode[]>, sourceFields: string[], parent: string[]): string[] {
+export function graphqlSelectionToESSourceFields(parent: string[], selectionSet: Readonly<SelectionNode[]>, sourceFields: string[] = []): string[] {
     for (const dataFieldSelection of selectionSet) {
         if (dataFieldSelection.kind !== 'Field') {
             throw new Error('invalid selection');
@@ -13,7 +13,7 @@ export function graphqlSelectionToESSourceFields(selectionSet: Readonly<Selectio
             const newParent = [...parent];
             newParent.push(dataFieldSelection.name.value)
             sourceFields = graphqlSelectionToESSourceFields(
-                dataFieldSelection.selectionSet.selections, sourceFields, newParent);
+                newParent, dataFieldSelection.selectionSet.selections, sourceFields);
         } else {
             if (parent.length > 0) {
                 sourceFields.push(parent.join('.') + '.' + dataFieldSelection.name.value);
@@ -27,7 +27,7 @@ export function graphqlSelectionToESSourceFields(selectionSet: Readonly<Selectio
 }
 
 //recursive function to build elasticsearch filters
-export function graphqlFiltersToESFilters(parent: string[], queryFilters: Record<any, any>, esFilters: Record<any, any>[], schema: GraphqlSchema): Record<any, any>[] {
+export function graphqlFiltersToESFilters(parent: string[], queryFilters: Record<any, any>, schema: GraphqlSchema, esFilters: Record<any, any>[] = []): Record<any, any>[] {
     const parentInputSchema = schema.getInput(inputName(parent[parent.length - 1]));
 
     for (const queryFilterKey in queryFilters) {
@@ -40,7 +40,7 @@ export function graphqlFiltersToESFilters(parent: string[], queryFilters: Record
             //recurse into nested filter
             const newParent = [...parent];
             newParent.push(queryFilterKey)
-            esFilters = graphqlFiltersToESFilters(newParent, queryFilters[queryFilterKey], esFilters, schema);
+            esFilters = graphqlFiltersToESFilters(newParent, queryFilters[queryFilterKey], schema, esFilters);
         }
     }
 
