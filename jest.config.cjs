@@ -14,4 +14,10 @@ module.exports = {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
+  collectCoverageFrom: [
+    "**/*.{ts,jsx}",
+    "!**/node_modules/**",
+    "!**/vendor/**",
+    "!**/dist/**"
+  ]
 }
