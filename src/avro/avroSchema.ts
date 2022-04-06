@@ -59,6 +59,9 @@ export class Field {
     @Expose({ name: 'xjoin.index' })
     xjoinIndex: boolean = true;
 
+    @Expose({ name: 'xjoin.type' })
+    xjoinType: string = "";
+
     @Expose({ name: 'xjoin.enumeration' })
     xjoinEnumeration: boolean = true;
 
@@ -82,6 +85,14 @@ export class Field {
 
     getPrimaryKey(): boolean {
         return typeConversion(this).primaryKey;
+    }
+
+    getAvroType(): string {
+        return typeConversion(this).avroType;
+    }
+
+    getXJoinType(): string {
+        return typeConversion(this).xjoinType;
     }
 
     getChildren() : Field[] {
@@ -133,31 +144,43 @@ type FieldTypes = {
     graphqlType: string,
     filterType: string,
     enumeration: boolean,
-    primaryKey: boolean
+    primaryKey: boolean,
+    avroType: string,
+    xjoinType: string
 }
 
 function typeConversion(field: Field): FieldTypes {
     let typeString;
     let enumeration;
     let primaryKey = false;
+    let avroType;
+    let xjoinType;
     if (typeof field.type === 'string') {
+        xjoinType = field.xjoinType;
+        avroType = field.type;
         typeString = field.type; //TODO: xjoinType
         enumeration = field.xjoinEnumeration;
     } else if (Array.isArray(field.type)) {
+        avroType = field.type[1].type;
         typeString = field.type[1].xjoinType;
         enumeration = field.type[1].xjoinEnumeration;
         primaryKey = field.type[1].xjoinPrimaryKey;
+        xjoinType = field.type[1].xjoinType;
     } else { //single type object
+        avroType = field.type.type;
         typeString = field.type.xjoinType;
         enumeration = field.type.xjoinEnumeration;
         primaryKey = field.type.xjoinPrimaryKey;
+        xjoinType = field.type.xjoinType;
     }
 
     const response : FieldTypes = {
         graphqlType: "",
         filterType: "",
-        enumeration: enumeration,
-        primaryKey: primaryKey
+        enumeration,
+        primaryKey,
+        avroType,
+        xjoinType
     };
 
     switch (typeString) {

@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import {
     GraphQLEnum, GraphQLField,
     GraphQLInput, GraphQLInputField,
@@ -16,7 +17,43 @@ export class AvroSchemaParser {
     avroSchema: AvroSchema;
 
     constructor(avroSchema: string) {
+        if (!avroSchema) {
+            throw Error('avroSchema is a required parameter to create an AvroSchemaParser');
+        }
+
         this.avroSchema = plainToInstance(AvroSchema, JSON.parse(avroSchema));
+
+        if (this.avroSchema.type !== 'record') {
+            throw Error('avroSchema type must be "record"');
+        }
+
+        if (!this.avroSchema.name) {
+            throw Error('avroSchema must have a name');
+        }
+
+        if (this.avroSchema.fields.length !== 1) {
+            throw Error('avroSchema must contain a single root field');
+        }
+
+        if (!this.avroSchema.fields[0].name) {
+            throw Error('avroSchema root field must have a name');
+        }
+
+        if (this.avroSchema.fields[0].getAvroType() !== 'record') {
+            throw Error('avroSchema root field must be type=record')
+        }
+
+        if (this.avroSchema.fields[0].getXJoinType() !== 'reference') {
+            throw Error('avroSchema root field must be xjoin.type=reference')
+        }
+
+        if (typeof this.avroSchema.fields[0].type === 'string' || Array.isArray(this.avroSchema.fields[0].type)) {
+            throw Error('avroSchema root field type must be an object containing at least one field')
+        } else { //single type object
+            if (this.avroSchema.fields[0].type.fields.length < 1) {
+                throw Error('avroSchema root field must contain at least one child field')
+            }
+        }
     }
 
     convertToGraphQL(): GraphqlSchema {
@@ -38,6 +75,8 @@ export class AvroSchemaParser {
                 const fieldName: string = capitalize(field.name);
                 const subFields = field.getChildren();
 
+                let hasEnumeration = false;
+
                 if (subFields != null && subFields.length > 0) {
                     graphqlSchema = this.parseAvroFields(subFields, graphqlSchema);
 
@@ -52,6 +91,7 @@ export class AvroSchemaParser {
                         //so the parent's enumeration type is added to the gql schema
                         if (subField.getEnumeration()) {
                             field.setEnumeration(true);
+                            hasEnumeration = true;
                         }
 
                         if (subField.getFilterType() != "") {
@@ -124,7 +164,9 @@ export class AvroSchemaParser {
                         graphqlSchema.addEnum(orderByEnum);
                         graphqlSchema.addType(buildCollectionType(graphqlType.name));
 
-                        graphqlSchema.addQuery(buildEnumerationQuery(fieldName));
+                        if (hasEnumeration) {
+                            graphqlSchema.addQuery(buildEnumerationQuery(fieldName));
+                        }
                     }
                 }
             }
