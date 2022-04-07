@@ -127,6 +127,19 @@ export class Field {
 
         this.xjoinEnumeration = value;
     }
+
+    validate() {
+        if (!this.name) {
+            throw Error(`field is missing name attribute`)
+        }
+        if (!this.getAvroType()) {
+            throw Error(`field ${this.name} is missing type attribute`)
+        }
+        if (!this.getXJoinType()) {
+            throw Error(`field ${this.name} is missing xjoin.type attribute`)
+        }
+
+    }
 }
 
 export class Transformation {

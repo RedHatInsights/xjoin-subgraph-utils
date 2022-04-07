@@ -280,7 +280,7 @@ describe('AvroSchemaParser', () => {
                 }]
             };
             const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
-            expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('child field of host is missing name attribute');
+            expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('field is missing name attribute');
         });
 
         test('throws an error if a child field is missing an avro type', async () => {
@@ -304,7 +304,7 @@ describe('AvroSchemaParser', () => {
                 }]
             };
             const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
-            expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('child field of host is missing type attribute');
+            expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('field id is missing type attribute');
         });
 
         test('throws an error if a child field is missing an xjoin.type', async () => {
@@ -328,7 +328,19 @@ describe('AvroSchemaParser', () => {
                 }]
             };
             const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
-            expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('child field of host is missing xjoin.type attribute');
+            expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('field id is missing xjoin.type attribute');
         });
+
+        test('doesnt index fields with xjoin.index: false', async () => {
+
+        });
+
+        test('doesnt index nested fields with xjoin.index: false', async () => {
+
+        });
+    });
+
+    describe('convertToGraphQL enumerations', () => {
+
     });
 });

@@ -60,12 +60,35 @@ export class AvroSchemaParser {
         return graphqlSchema;
     }
 
+    /*
+     * Recursive function to transform Avro Fields into a GraphQL Schema
+     *
+     * Each Avro field with xjoin.type=reference is transformed into the following:
+     *   - GraphQL Query
+     *   - GraphQL ORDER_BY enum
+     *   - GraphQL Type
+     *   - GraphQL Enumeration Query
+     *   - GraphQL Filter
+     *
+     * Each child field of a reference that is an Object is transformed into the following:
+     *   - GraphQL Input
+     *   - GraphQL Type
+     *   - GraphQL ORDER_BY enum
+     *
+     * Each child field of a reference field is recursively transformed into the following:
+     *   - Added to it's parent's GraphQL Input Filter
+     *   - Added to it's parent's GraphQL Object Type
+     *   - Added to it's parent's Enumeration Query
+     *   - Added to it's parent's ORDER_BY enum
+     */
     parseAvroFields(fields: Field[], graphqlSchema: GraphqlSchema): GraphqlSchema {
         for (const field of fields) {
             //skip fields with xjoinIndex: false
             if (field.xjoinIndex !== undefined && !field.xjoinIndex) {
                 continue;
             }
+
+            field.validate();
 
             const fieldGQLType = field.getGraphQLType();
 
@@ -82,18 +105,21 @@ export class AvroSchemaParser {
                     const graphqlInput = new GraphQLInput(inputName(fieldName));
                     const orderByEnum = new GraphQLEnum(orderByEnumName(fieldName));
                     const graphqlType = new GraphQLObjectType(typeName(fieldName));
-
                     const enumerationType = new GraphQLObjectType(typeName(enumerationName(fieldName)))
 
+                    //loop over each subField to build the graphql entities (type, input, enum, etc.)
                     for (const subField of subFields) {
-                        if (!subField.name) {
-                            throw Error(`child field of ${field.name} is missing name attribute`)
+                        if (field.xjoinIndex !== undefined && !field.xjoinIndex) {
+                            continue;
                         }
-                        if (!subField.getAvroType()) {
-                            throw Error(`child field of ${field.name} is missing type attribute`)
-                        }
-                        if (!subField.getXJoinType()) {
-                            throw Error(`child field of ${field.name} is missing xjoin.type attribute`)
+
+                        subField.validate();
+
+                        if (subField.getPrimaryKey() && hasPrimaryKey) {
+                            throw Error(`multiple primary keys defined on ${field.name}`);
+                        } else if (subField.getPrimaryKey()) {
+                            graphqlType.addKey(subField.name);
+                            hasPrimaryKey = true;
                         }
 
                         //update parent with xjoin.enumeration:true
@@ -111,72 +137,43 @@ export class AvroSchemaParser {
                         const subFieldGQLType = subField.getGraphQLType();
                         if (subFieldGQLType === 'Object') {
                             if (subField.hasChildren()) {
+                                //Objects with children are queryable as nested types
                                 graphqlType.addField(new GraphQLField(subField.name, new GraphQLType(typeName(subField.name), false, false)));
-                                if (subField.getPrimaryKey() && hasPrimaryKey) {
-                                    throw Error(`multiple primary keys defined on ${field.name}`);
-                                } else if (subField.getPrimaryKey()) {
-                                    graphqlType.addKey(subField.name);
-                                    hasPrimaryKey = true;
-                                }
 
                                 //TODO: fieldname needs to include parent to avoid conflicts
                                 if (subField.getEnumeration()) {
                                     enumerationType.addField(new GraphQLField(subField.name, new GraphQLType(typeName(enumerationName(subField.name)), false, false)));
                                 }
                             } else {
+                                //Objects without children are queryable as JSONObject scalars
                                 graphqlType.addField(new GraphQLField(subField.name, new GraphQLType('JSONObject', false, false)));
-                                if (subField.getPrimaryKey() && hasPrimaryKey) {
-                                    throw Error(`multiple primary keys defined on ${field.name}`);
-                                } else if (subField.getPrimaryKey()) {
-                                    graphqlType.addKey(subField.name);
-                                    hasPrimaryKey = true;
-                                }
 
                                 //don't support enumerations for plain JSONObject fields
                                 //enumerationType.addField(new GraphQLTypeField(subField.name, 'JSONObject', false, false));
                             }
                         } else {
                             graphqlType.addField(new GraphQLField(subField.name, new GraphQLType(subFieldGQLType, false, false)));
-                            if (subField.getPrimaryKey() && hasPrimaryKey) {
-                                throw Error(`multiple primary keys defined on ${field.name}`);
-                            } else if (subField.getPrimaryKey()) {
-                                graphqlType.addKey(subField.name);
-                                hasPrimaryKey = true;
-                            }
 
                             if (subField.getEnumeration()) {
-                                let fieldType = ''
-                                if (subFieldGQLType === 'String') {
-                                    fieldType = 'StringEnumeration';
-                                } else if (subFieldGQLType === 'Boolean') {
-                                    fieldType = 'BooleanEnumeration';
-                                }
+                                const enumerationField = buildEnumerationField(
+                                    subFieldGQLType, subField.name, graphqlSchema.rootFilter)
 
-                                const enumerationField = new GraphQLField(subField.name, new GraphQLType(fieldType, false, false));
-                                enumerationField.addParameter(new GraphQLQueryParameter(graphqlSchema.rootFilter, graphqlSchema.rootFilter))
-                                enumerationField.addParameter(new GraphQLQueryParameter('filter', FILTER_TYPES.AGGREGATION_FILTER))
-                                enumerationField.addParameter(new GraphQLQueryParameter('limit', 'Int', '10'));
-                                enumerationField.addParameter(new GraphQLQueryParameter('offset', 'Int', '0'));
-                                enumerationField.addParameter(new GraphQLQueryParameter(
-                                    'order_by', 'ENUMERATION_ORDER_BY', 'value'));
-                                enumerationField.addParameter(new GraphQLQueryParameter(
-                                    'order_how', 'ORDER_DIR', 'ASC'));
-
-                                if (fieldType !== '') {
+                                if (enumerationField !== null) {
                                     enumerationType.addField(enumerationField);
                                 }
                             }
                         }
                     }
 
+                    //add the input and type entities to the graphql schema
                     graphqlSchema.addInput(graphqlInput);
                     graphqlSchema.addType(graphqlType);
-
                     if (field.getEnumeration()) {
                         graphqlSchema.addType(enumerationType);
                     }
 
                     //only top level Reference types are Queryable at the root level
+                    //add the root entity types to the graphql schema
                     if (fieldGQLType === 'Reference') {
                         if (!hasPrimaryKey) {
                             throw Error(`missing xjoin.primary.key child field on reference field ${field.name}`)
@@ -195,6 +192,30 @@ export class AvroSchemaParser {
 
         return graphqlSchema;
     }
+}
+
+function buildEnumerationField(fieldGQLType: string, fieldName: string, rootFilter: string): GraphQLField | null {
+    let fieldType = ''
+    if (fieldGQLType === 'String') {
+        fieldType = 'StringEnumeration';
+    } else if (fieldGQLType === 'Boolean') {
+        fieldType = 'BooleanEnumeration';
+    }
+
+    if (!fieldType) {
+        return null
+    }
+
+    const enumerationField = new GraphQLField(fieldName, new GraphQLType(fieldType, false, false));
+    enumerationField.addParameter(new GraphQLQueryParameter(rootFilter, rootFilter))
+    enumerationField.addParameter(new GraphQLQueryParameter('filter', FILTER_TYPES.AGGREGATION_FILTER))
+    enumerationField.addParameter(new GraphQLQueryParameter('limit', 'Int', '10'));
+    enumerationField.addParameter(new GraphQLQueryParameter('offset', 'Int', '0'));
+    enumerationField.addParameter(new GraphQLQueryParameter(
+        'order_by', 'ENUMERATION_ORDER_BY', 'value'));
+    enumerationField.addParameter(new GraphQLQueryParameter(
+        'order_how', 'ORDER_DIR', 'ASC'));
+    return enumerationField;
 }
 
 function buildEnumerationQuery(fieldName: string): GraphQLQuery {
