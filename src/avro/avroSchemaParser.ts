@@ -49,10 +49,8 @@ export class AvroSchemaParser {
 
         if (typeof this.avroSchema.fields[0].type === 'string' || Array.isArray(this.avroSchema.fields[0].type)) {
             throw Error('avroSchema root field type must be an object containing at least one field')
-        } else { //single type object
-            if (this.avroSchema.fields[0].type.fields.length < 1) {
-                throw Error('avroSchema root field must contain at least one child field')
-            }
+        } else if (this.avroSchema.fields[0].type.fields.length < 1) {
+            throw Error('avroSchema root field must contain at least one child field')
         }
     }
 
@@ -76,6 +74,7 @@ export class AvroSchemaParser {
                 const subFields = field.getChildren();
 
                 let hasEnumeration = false;
+                let hasPrimaryKey = false;
 
                 if (subFields != null && subFields.length > 0) {
                     graphqlSchema = this.parseAvroFields(subFields, graphqlSchema);
@@ -87,6 +86,16 @@ export class AvroSchemaParser {
                     const enumerationType = new GraphQLObjectType(typeName(enumerationName(fieldName)))
 
                     for (const subField of subFields) {
+                        if (!subField.name) {
+                            throw Error(`child field of ${field.name} is missing name attribute`)
+                        }
+                        if (!subField.getAvroType()) {
+                            throw Error(`child field of ${field.name} is missing type attribute`)
+                        }
+                        if (!subField.getXJoinType()) {
+                            throw Error(`child field of ${field.name} is missing xjoin.type attribute`)
+                        }
+
                         //update parent with xjoin.enumeration:true
                         //so the parent's enumeration type is added to the gql schema
                         if (subField.getEnumeration()) {
@@ -103,8 +112,11 @@ export class AvroSchemaParser {
                         if (subFieldGQLType === 'Object') {
                             if (subField.hasChildren()) {
                                 graphqlType.addField(new GraphQLField(subField.name, new GraphQLType(typeName(subField.name), false, false)));
-                                if (subField.getPrimaryKey()) {
+                                if (subField.getPrimaryKey() && hasPrimaryKey) {
+                                    throw Error(`multiple primary keys defined on ${field.name}`);
+                                } else if (subField.getPrimaryKey()) {
                                     graphqlType.addKey(subField.name);
+                                    hasPrimaryKey = true;
                                 }
 
                                 //TODO: fieldname needs to include parent to avoid conflicts
@@ -113,8 +125,11 @@ export class AvroSchemaParser {
                                 }
                             } else {
                                 graphqlType.addField(new GraphQLField(subField.name, new GraphQLType('JSONObject', false, false)));
-                                if (subField.getPrimaryKey()) {
+                                if (subField.getPrimaryKey() && hasPrimaryKey) {
+                                    throw Error(`multiple primary keys defined on ${field.name}`);
+                                } else if (subField.getPrimaryKey()) {
                                     graphqlType.addKey(subField.name);
+                                    hasPrimaryKey = true;
                                 }
 
                                 //don't support enumerations for plain JSONObject fields
@@ -122,8 +137,11 @@ export class AvroSchemaParser {
                             }
                         } else {
                             graphqlType.addField(new GraphQLField(subField.name, new GraphQLType(subFieldGQLType, false, false)));
-                            if (subField.getPrimaryKey()) {
+                            if (subField.getPrimaryKey() && hasPrimaryKey) {
+                                throw Error(`multiple primary keys defined on ${field.name}`);
+                            } else if (subField.getPrimaryKey()) {
                                 graphqlType.addKey(subField.name);
+                                hasPrimaryKey = true;
                             }
 
                             if (subField.getEnumeration()) {
@@ -160,6 +178,9 @@ export class AvroSchemaParser {
 
                     //only top level Reference types are Queryable at the root level
                     if (fieldGQLType === 'Reference') {
+                        if (!hasPrimaryKey) {
+                            throw Error(`missing xjoin.primary.key child field on reference field ${field.name}`)
+                        }
                         graphqlSchema.addQuery(buildQuery(fieldName));
                         graphqlSchema.addEnum(orderByEnum);
                         graphqlSchema.addType(buildCollectionType(graphqlType.name));

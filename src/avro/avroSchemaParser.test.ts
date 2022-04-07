@@ -202,5 +202,133 @@ describe('AvroSchemaParser', () => {
 
             expect(graphqlSchema.definitions).toEqual(expectedGraphqlSchema.definitions);
         });
+
+        test('throws an error if no primary key is defined on the root field', async () => {
+            const avroSchema = {
+                type: 'record',
+                name: 'Value',
+                namespace: 'hosts',
+                fields: [{
+                    name: 'host',
+                    type: {
+                        type: 'record',
+                        'xjoin.type': 'reference',
+                        fields: [{
+                            name: 'id',
+                            type: {
+                                type: 'string',
+                                'xjoin.type': 'string'
+                            }
+                        }]
+                    }
+                }]
+            };
+            const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
+            expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('missing xjoin.primary.key child field on reference field host');
+        });
+
+        test('throws an error if multiple primary keys are defined on the root field', async () => {
+            const avroSchema = {
+                type: 'record',
+                name: 'Value',
+                namespace: 'hosts',
+                fields: [{
+                    name: 'host',
+                    type: {
+                        type: 'record',
+                        'xjoin.type': 'reference',
+                        fields: [{
+                            name: 'id',
+                            type: {
+                                type: 'string',
+                                'xjoin.type': 'string',
+                                'xjoin.primary.key': true
+                            }
+                        }, {
+                            name: 'another',
+                            type: {
+                                type: 'string',
+                                'xjoin.type': 'string',
+                                'xjoin.primary.key': true
+                            }
+                        }]
+                    }
+                }]
+            };
+            const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
+            expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('multiple primary keys defined on host');
+        });
+
+        test('throws an error if a child field is missing a name', async () => {
+            const avroSchema = {
+                type: 'record',
+                name: 'Value',
+                namespace: 'hosts',
+                fields: [{
+                    name: 'host',
+                    type: {
+                        type: 'record',
+                        'xjoin.type': 'reference',
+                        fields: [{
+                            type: {
+                                type: 'string',
+                                'xjoin.type': 'string',
+                                'xjoin.primary.key': true
+                            }
+                        }]
+                    }
+                }]
+            };
+            const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
+            expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('child field of host is missing name attribute');
+        });
+
+        test('throws an error if a child field is missing an avro type', async () => {
+            const avroSchema = {
+                type: 'record',
+                name: 'Value',
+                namespace: 'hosts',
+                fields: [{
+                    name: 'host',
+                    type: {
+                        type: 'record',
+                        'xjoin.type': 'reference',
+                        fields: [{
+                            name: 'id',
+                            type: {
+                                'xjoin.type': 'string',
+                                'xjoin.primary.key': true
+                            }
+                        }]
+                    }
+                }]
+            };
+            const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
+            expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('child field of host is missing type attribute');
+        });
+
+        test('throws an error if a child field is missing an xjoin.type', async () => {
+            const avroSchema = {
+                type: 'record',
+                name: 'Value',
+                namespace: 'hosts',
+                fields: [{
+                    name: 'host',
+                    type: {
+                        type: 'record',
+                        'xjoin.type': 'reference',
+                        fields: [{
+                            name: 'id',
+                            type: {
+                                type: 'string',
+                                'xjoin.primary.key': true
+                            }
+                        }]
+                    }
+                }]
+            };
+            const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
+            expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('child field of host is missing xjoin.type attribute');
+        });
     });
 });
