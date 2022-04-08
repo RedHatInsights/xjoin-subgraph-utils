@@ -71,28 +71,119 @@ export class Field {
     name: string = "";
     default: string = "";
 
+    fieldTypes: FieldTypes | undefined = undefined;
+
     getGraphQLType() : string {
-        return typeConversion(this).graphqlType;
+        return this.typeConversion().graphqlType;
     }
 
     getFilterType() : string {
-        return typeConversion(this).filterType;
+        return this.typeConversion().filterType;
     }
 
     getEnumeration(): boolean {
-        return typeConversion(this).enumeration;
+        return this.typeConversion().enumeration;
     }
 
     getPrimaryKey(): boolean {
-        return typeConversion(this).primaryKey;
+        return this.typeConversion().primaryKey;
     }
 
     getAvroType(): string {
-        return typeConversion(this).avroType;
+        return this.typeConversion().avroType;
     }
 
     getXJoinType(): string {
-        return typeConversion(this).xjoinType;
+        return this.typeConversion().xjoinType;
+    }
+
+    typeConversion(): FieldTypes {
+        if (this.fieldTypes !== undefined) {
+            return this.fieldTypes;
+        }
+
+        let typeString;
+        let enumeration;
+        let primaryKey = false;
+        let avroType;
+        let xjoinType;
+        if (typeof this.type === 'string') {
+            xjoinType = this.xjoinType;
+            avroType = this.type;
+            typeString = this.type; //TODO: xjoinType
+            enumeration = this.xjoinEnumeration;
+        } else if (Array.isArray(this.type)) {
+            avroType = this.type[1].type;
+            typeString = this.type[1].xjoinType;
+            enumeration = this.type[1].xjoinEnumeration;
+            primaryKey = this.type[1].xjoinPrimaryKey;
+            xjoinType = this.type[1].xjoinType;
+        } else { //single type object
+            avroType = this.type.type;
+            typeString = this.type.xjoinType;
+            enumeration = this.type.xjoinEnumeration;
+            primaryKey = this.type.xjoinPrimaryKey;
+            xjoinType = this.type.xjoinType;
+        }
+
+        this.fieldTypes = {
+            graphqlType: "",
+            filterType: "",
+            enumeration,
+            primaryKey,
+            avroType,
+            xjoinType
+        };
+
+        switch (typeString) {
+            case 'date_nanos': {
+                this.fieldTypes.graphqlType = 'String';
+                this.fieldTypes.filterType = 'FilterTimestamp';
+                break;
+            }
+            case 'string': {
+                this.fieldTypes.graphqlType = 'String';
+                this.fieldTypes.filterType = 'FilterString';
+                break;
+            }
+            case 'boolean': {
+                this.fieldTypes.graphqlType = 'Boolean';
+                this.fieldTypes.filterType = 'FilterBoolean';
+                break;
+            }
+            case 'json': {
+                this.fieldTypes.graphqlType = 'Object';
+
+                if (this.hasChildren()) {
+                    this.fieldTypes.filterType = inputName(this.name)
+                } else {
+                    this.fieldTypes.filterType = "";
+                }
+                break;
+            }
+            case 'record': { //TODO: is this a valid xjoin.type?
+                this.fieldTypes.graphqlType = 'Object';
+                this.fieldTypes.filterType = 'FilterString';
+                break;
+            }
+            case 'reference': {
+                this.fieldTypes.graphqlType = 'Reference';
+                this.fieldTypes.filterType = 'FilterString';
+                break;
+            }
+            case 'array': {
+                this.fieldTypes.graphqlType = '[String]'; //TODO handle different array item types
+                this.fieldTypes.filterType = 'FilterStringArray';
+                break;
+            }
+            default: {
+                this.fieldTypes.graphqlType = 'String';
+                this.fieldTypes.filterType = 'FilterString';
+                break;
+            }
+        }
+
+        return this.fieldTypes;
     }
 
     getChildren() : Field[] {
@@ -162,88 +253,4 @@ type FieldTypes = {
     xjoinType: string
 }
 
-function typeConversion(field: Field): FieldTypes {
-    let typeString;
-    let enumeration;
-    let primaryKey = false;
-    let avroType;
-    let xjoinType;
-    if (typeof field.type === 'string') {
-        xjoinType = field.xjoinType;
-        avroType = field.type;
-        typeString = field.type; //TODO: xjoinType
-        enumeration = field.xjoinEnumeration;
-    } else if (Array.isArray(field.type)) {
-        avroType = field.type[1].type;
-        typeString = field.type[1].xjoinType;
-        enumeration = field.type[1].xjoinEnumeration;
-        primaryKey = field.type[1].xjoinPrimaryKey;
-        xjoinType = field.type[1].xjoinType;
-    } else { //single type object
-        avroType = field.type.type;
-        typeString = field.type.xjoinType;
-        enumeration = field.type.xjoinEnumeration;
-        primaryKey = field.type.xjoinPrimaryKey;
-        xjoinType = field.type.xjoinType;
-    }
-
-    const response : FieldTypes = {
-        graphqlType: "",
-        filterType: "",
-        enumeration,
-        primaryKey,
-        avroType,
-        xjoinType
-    };
-
-    switch (typeString) {
-        case 'date_nanos': {
-            response.graphqlType = 'String';
-            response.filterType = 'FilterTimestamp';
-            break;
-        }
-        case 'string': {
-            response.graphqlType = 'String';
-            response.filterType = 'FilterString';
-            break;
-        }
-        case 'boolean': {
-            response.graphqlType = 'Boolean';
-            response.filterType = 'FilterBoolean';
-            break;
-        }
-        case 'json': {
-            response.graphqlType = 'Object';
-
-            if (field.hasChildren()) {
-                response.filterType = inputName(field.name)
-            } else {
-                response.filterType = "";
-            }
-            break;
-        }
-        case 'record': { //TODO: is this a valid xjoin.type?
-            response.graphqlType = 'Object';
-            response.filterType = 'FilterString';
-            break;
-        }
-        case 'reference': {
-            response.graphqlType = 'Reference';
-            response.filterType = 'FilterString';
-            break;
-        }
-        case 'array': {
-            response.graphqlType = '[String]'; //TODO handle different array item types
-            response.filterType = 'FilterStringArray';
-            break;
-        }
-        default: {
-            response.graphqlType = 'String';
-            response.filterType = 'FilterString';
-            break;
-        }
-    }
-
-    return response;
-}
 
