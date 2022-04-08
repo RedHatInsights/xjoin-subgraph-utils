@@ -10,6 +10,11 @@ function loadGraphqlSchemaFromFile(name: string): string {
     return readFileSync(`${__dirname}/../test/graphqlSchemas/${name}.graphql`).toString();
 }
 
+function loadAvroSchemaFromFile(name: string): string {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    return readFileSync(`${__dirname}/../test/avroSchemas/${name}.json`).toString();
+}
+
 describe('AvroSchemaParser', () => {
     describe('constructor', () => {
         test('throws an error when missing parameter avroSchema', () => {
@@ -176,27 +181,8 @@ describe('AvroSchemaParser', () => {
 
     describe('convertToGraphQL', () => {
         test('converts the minimum valid avro schema to a graphql schema', async () => {
-            const avroSchema = {
-                type: 'record',
-                name: 'Value',
-                namespace: 'hosts',
-                fields: [{
-                    name: 'host',
-                    type: {
-                        type: 'record',
-                        'xjoin.type': 'reference',
-                        fields: [{
-                            name: 'id',
-                            type: {
-                                type: 'string',
-                                'xjoin.type': 'string',
-                                'xjoin.primary.key': true
-                            }
-                        }]
-                    }
-                }]
-            };
-            const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
+            const avroSchema = loadAvroSchemaFromFile('minimum.valid');
+            const avroSchemaParser = new AvroSchemaParser(avroSchema);
             const graphqlSchema = gql(avroSchemaParser.convertToGraphQL().toString());
             const expectedGraphqlSchema = gql(loadGraphqlSchemaFromFile('minimum.valid'))
 
@@ -204,129 +190,48 @@ describe('AvroSchemaParser', () => {
         });
 
         test('throws an error if no primary key is defined on the root field', async () => {
-            const avroSchema = {
-                type: 'record',
-                name: 'Value',
-                namespace: 'hosts',
-                fields: [{
-                    name: 'host',
-                    type: {
-                        type: 'record',
-                        'xjoin.type': 'reference',
-                        fields: [{
-                            name: 'id',
-                            type: {
-                                type: 'string',
-                                'xjoin.type': 'string'
-                            }
-                        }]
-                    }
-                }]
-            };
+            const avroSchemaString = loadAvroSchemaFromFile('minimum.valid');
+            const avroSchema = JSON.parse(avroSchemaString);
+            delete avroSchema.fields[0].type.fields[0].type['xjoin.primary.key'];
             const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
             expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('missing xjoin.primary.key child field on reference field host');
         });
 
         test('throws an error if multiple primary keys are defined on the root field', async () => {
-            const avroSchema = {
-                type: 'record',
-                name: 'Value',
-                namespace: 'hosts',
-                fields: [{
-                    name: 'host',
-                    type: {
-                        type: 'record',
-                        'xjoin.type': 'reference',
-                        fields: [{
-                            name: 'id',
-                            type: {
-                                type: 'string',
-                                'xjoin.type': 'string',
-                                'xjoin.primary.key': true
-                            }
-                        }, {
-                            name: 'another',
-                            type: {
-                                type: 'string',
-                                'xjoin.type': 'string',
-                                'xjoin.primary.key': true
-                            }
-                        }]
-                    }
-                }]
-            };
+            const avroSchemaString = loadAvroSchemaFromFile('minimum.valid');
+            const avroSchema = JSON.parse(avroSchemaString);
+            avroSchema.fields[0].type.fields.push({
+                name: 'another',
+                type: {
+                    type: 'string',
+                    'xjoin.type': 'string',
+                    'xjoin.primary.key': true
+                }
+            })
             const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
             expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('multiple primary keys defined on host');
         });
 
         test('throws an error if a child field is missing a name', async () => {
-            const avroSchema = {
-                type: 'record',
-                name: 'Value',
-                namespace: 'hosts',
-                fields: [{
-                    name: 'host',
-                    type: {
-                        type: 'record',
-                        'xjoin.type': 'reference',
-                        fields: [{
-                            type: {
-                                type: 'string',
-                                'xjoin.type': 'string',
-                                'xjoin.primary.key': true
-                            }
-                        }]
-                    }
-                }]
-            };
+            const avroSchemaString = loadAvroSchemaFromFile('minimum.valid');
+            const avroSchema = JSON.parse(avroSchemaString);
+            delete avroSchema.fields[0].type.fields[0].name
             const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
             expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('field is missing name attribute');
         });
 
         test('throws an error if a child field is missing an avro type', async () => {
-            const avroSchema = {
-                type: 'record',
-                name: 'Value',
-                namespace: 'hosts',
-                fields: [{
-                    name: 'host',
-                    type: {
-                        type: 'record',
-                        'xjoin.type': 'reference',
-                        fields: [{
-                            name: 'id',
-                            type: {
-                                'xjoin.type': 'string',
-                                'xjoin.primary.key': true
-                            }
-                        }]
-                    }
-                }]
-            };
+            const avroSchemaString = loadAvroSchemaFromFile('minimum.valid');
+            const avroSchema = JSON.parse(avroSchemaString);
+            delete avroSchema.fields[0].type.fields[0].type.type
             const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
             expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('field id is missing type attribute');
         });
 
         test('throws an error if a child field is missing an xjoin.type', async () => {
-            const avroSchema = {
-                type: 'record',
-                name: 'Value',
-                namespace: 'hosts',
-                fields: [{
-                    name: 'host',
-                    type: {
-                        type: 'record',
-                        'xjoin.type': 'reference',
-                        fields: [{
-                            name: 'id',
-                            type: {
-                                type: 'string',
-                                'xjoin.primary.key': true
-                            }
-                        }]
-                    }
-                }]
-            };
+            const avroSchemaString = loadAvroSchemaFromFile('minimum.valid');
+            const avroSchema = JSON.parse(avroSchemaString);
+            delete avroSchema.fields[0].type.fields[0].type['xjoin.type'];
             const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
             expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('field id is missing xjoin.type attribute');
         });
