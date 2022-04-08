@@ -15,6 +15,7 @@ import {FILTER_TYPES} from "../graphql/types.js";
 
 export class AvroSchemaParser {
     avroSchema: AvroSchema;
+    graphqlSchema: GraphqlSchema;
 
     constructor(avroSchema: string) {
         if (!avroSchema) {
@@ -52,12 +53,12 @@ export class AvroSchemaParser {
         } else if (this.avroSchema.fields[0].type.fields.length < 1) {
             throw Error('avroSchema root field must contain at least one child field')
         }
+
+        this.graphqlSchema = new GraphqlSchema(this.avroSchema.fields[0].name);
     }
 
     convertToGraphQL(): GraphqlSchema {
-        let graphqlSchema = new GraphqlSchema(this.avroSchema.fields[0].name);
-        graphqlSchema = this.parseAvroFields(this.avroSchema.fields, graphqlSchema);
-        return graphqlSchema;
+        return this.parseAvroFields(this.avroSchema.fields);
     }
 
     /*
@@ -81,7 +82,7 @@ export class AvroSchemaParser {
      *   - Added to it's parent's Enumeration Query
      *   - Added to it's parent's ORDER_BY enum
      */
-    parseAvroFields(fields: Field[], graphqlSchema: GraphqlSchema): GraphqlSchema {
+    parseAvroFields(fields: Field[]): GraphqlSchema {
         for (const field of fields) {
             //skip fields with xjoinIndex: false
             if (field.xjoinIndex !== undefined && !field.xjoinIndex) {
@@ -100,7 +101,7 @@ export class AvroSchemaParser {
                 let hasPrimaryKey = false;
 
                 if (subFields != null && subFields.length > 0) {
-                    graphqlSchema = this.parseAvroFields(subFields, graphqlSchema);
+                    this.graphqlSchema = this.parseAvroFields(subFields);
 
                     const graphqlInput = new GraphQLInput(inputName(fieldName));
                     const orderByEnum = new GraphQLEnum(orderByEnumName(fieldName));
@@ -156,7 +157,7 @@ export class AvroSchemaParser {
 
                             if (subField.getEnumeration()) {
                                 const enumerationField = buildEnumerationField(
-                                    subFieldGQLType, subField.name, graphqlSchema.rootFilter)
+                                    subFieldGQLType, subField.name, this.graphqlSchema.rootFilter)
 
                                 if (enumerationField !== null) {
                                     enumerationType.addField(enumerationField);
@@ -166,10 +167,10 @@ export class AvroSchemaParser {
                     }
 
                     //add the input and type entities to the graphql schema
-                    graphqlSchema.addInput(graphqlInput);
-                    graphqlSchema.addType(graphqlType);
+                    this.graphqlSchema.addInput(graphqlInput);
+                    this.graphqlSchema.addType(graphqlType);
                     if (field.getEnumeration()) {
-                        graphqlSchema.addType(enumerationType);
+                        this.graphqlSchema.addType(enumerationType);
                     }
 
                     //only top level Reference types are Queryable at the root level
@@ -178,19 +179,19 @@ export class AvroSchemaParser {
                         if (!hasPrimaryKey) {
                             throw Error(`missing xjoin.primary.key child field on reference field ${field.name}`)
                         }
-                        graphqlSchema.addQuery(buildQuery(fieldName));
-                        graphqlSchema.addEnum(orderByEnum);
-                        graphqlSchema.addType(buildCollectionType(graphqlType.name));
+                        this.graphqlSchema.addQuery(buildQuery(fieldName));
+                        this.graphqlSchema.addEnum(orderByEnum);
+                        this.graphqlSchema.addType(buildCollectionType(graphqlType.name));
 
                         if (hasEnumeration) {
-                            graphqlSchema.addQuery(buildEnumerationQuery(fieldName));
+                            this.graphqlSchema.addQuery(buildEnumerationQuery(fieldName));
                         }
                     }
                 }
             }
         }
 
-        return graphqlSchema;
+        return this.graphqlSchema;
     }
 }
 
