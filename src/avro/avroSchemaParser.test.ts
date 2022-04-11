@@ -181,25 +181,21 @@ describe('AvroSchemaParser', () => {
 
     describe('convertToGraphQL', () => {
         test('converts the minimum valid avro schema to a graphql schema', async () => {
-            const avroSchema = loadAvroSchemaFromFile('minimum.valid');
-            const avroSchemaParser = new AvroSchemaParser(avroSchema);
+            const avroSchemaParser = new AvroSchemaParser(loadAvroSchemaFromFile('minimum.valid'));
             const graphqlSchema = gql(avroSchemaParser.convertToGraphQL().toString());
-            const expectedGraphqlSchema = gql(loadGraphqlSchemaFromFile('minimum.valid'))
-
+            const expectedGraphqlSchema = gql(loadGraphqlSchemaFromFile('minimum.valid'));
             expect(graphqlSchema.definitions).toEqual(expectedGraphqlSchema.definitions);
         });
 
         test('throws an error if no primary key is defined on the root field', async () => {
-            const avroSchemaString = loadAvroSchemaFromFile('minimum.valid');
-            const avroSchema = JSON.parse(avroSchemaString);
+            const avroSchema = JSON.parse(loadAvroSchemaFromFile('minimum.valid'));
             delete avroSchema.fields[0].type.fields[0].type['xjoin.primary.key'];
             const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
             expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('missing xjoin.primary.key child field on reference field host');
         });
 
         test('throws an error if multiple primary keys are defined on the root field', async () => {
-            const avroSchemaString = loadAvroSchemaFromFile('minimum.valid');
-            const avroSchema = JSON.parse(avroSchemaString);
+            const avroSchema = JSON.parse(loadAvroSchemaFromFile('minimum.valid'));
             avroSchema.fields[0].type.fields.push({
                 name: 'another',
                 type: {
@@ -213,35 +209,86 @@ describe('AvroSchemaParser', () => {
         });
 
         test('throws an error if a child field is missing a name', async () => {
-            const avroSchemaString = loadAvroSchemaFromFile('minimum.valid');
-            const avroSchema = JSON.parse(avroSchemaString);
+            const avroSchema = JSON.parse(loadAvroSchemaFromFile('minimum.valid'));
             delete avroSchema.fields[0].type.fields[0].name
             const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
             expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('field is missing name attribute');
         });
 
         test('throws an error if a child field is missing an avro type', async () => {
-            const avroSchemaString = loadAvroSchemaFromFile('minimum.valid');
-            const avroSchema = JSON.parse(avroSchemaString);
+            const avroSchema = JSON.parse(loadAvroSchemaFromFile('minimum.valid'));
             delete avroSchema.fields[0].type.fields[0].type.type
             const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
             expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('field id is missing type attribute');
         });
 
         test('throws an error if a child field is missing an xjoin.type', async () => {
-            const avroSchemaString = loadAvroSchemaFromFile('minimum.valid');
-            const avroSchema = JSON.parse(avroSchemaString);
+            const avroSchema = JSON.parse(loadAvroSchemaFromFile('minimum.valid'));
             delete avroSchema.fields[0].type.fields[0].type['xjoin.type'];
             const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
             expect(() => {avroSchemaParser.convertToGraphQL()}).toThrow('field id is missing xjoin.type attribute');
         });
 
-        test('doesnt index fields with xjoin.index: false', async () => {
-
+        test("correctly converts json object type with no children", async () => {
+            const avroSchema = JSON.parse(loadAvroSchemaFromFile('minimum.valid'));
+            avroSchema.fields[0].type.fields.push({
+                name: 'parent',
+                type: {
+                    type: 'string',
+                    'xjoin.type': 'json'
+                }
+            });
+            const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
+            const graphqlSchema = gql(avroSchemaParser.convertToGraphQL().toString());
+            const expectedGraphqlSchema = gql(loadGraphqlSchemaFromFile('single.json.child'))
+            expect(graphqlSchema.definitions).toEqual(expectedGraphqlSchema.definitions);
         });
 
-        test('doesnt index nested fields with xjoin.index: false', async () => {
+        test("doesn't include fields with xjoin.index: false in graphql schema", async () => {
+            const avroSchema = JSON.parse(loadAvroSchemaFromFile('minimum.valid'));
+            avroSchema.fields[0].type.fields.push({
+                name: 'another',
+                'xjoin.index': false,
+                type: {
+                    type: 'string',
+                    'xjoin.type': 'string'
+                }
+            })
+            const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
+            const graphqlSchema = gql(avroSchemaParser.convertToGraphQL().toString());
+            const expectedGraphqlSchema = gql(loadGraphqlSchemaFromFile('minimum.valid'))
 
+            expect(graphqlSchema.definitions).toEqual(expectedGraphqlSchema.definitions);
+        });
+
+        test("doesn't include nested fields with xjoin.index: false in graphql schema", async () => {
+            const avroSchema = JSON.parse(loadAvroSchemaFromFile('minimum.valid'));
+            avroSchema.fields[0].type.fields.push({
+                name: 'parent',
+                type: {
+                    type: 'string',
+                    'xjoin.type': 'json',
+                    'xjoin.fields': [{
+                        name: 'child1',
+                        'xjoin.index': true,
+                        type: {
+                            type: 'string',
+                           'xjoin.type': 'string'
+                        }
+                    }, {
+                        name: 'child2',
+                        'xjoin.index': false,
+                        type: {
+                            type: 'string',
+                            'xjoin.type': 'string'
+                        }
+                    }]
+                }
+            });
+            const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
+            const graphqlSchema = gql(avroSchemaParser.convertToGraphQL().toString());
+            const expectedGraphqlSchema = gql(loadGraphqlSchemaFromFile('nested.single.child'))
+            expect(graphqlSchema.definitions).toEqual(expectedGraphqlSchema.definitions);
         });
     });
 

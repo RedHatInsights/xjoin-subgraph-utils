@@ -1,0 +1,86 @@
+scalar JSONObject
+enum ORDER_DIR {
+    ASC
+    DESC
+}
+enum ENUMERATION_ORDER_BY {
+    value
+    count
+}
+enum HOSTS_ORDER_BY {
+    id,
+    parent,
+}
+type CollectionMeta {
+    count: Int
+    total: Int
+}
+type StringEnumerationValue {
+    value: String!
+    count: Int!
+}
+type StringEnumeration {
+    data: [StringEnumerationValue]!
+    meta: CollectionMeta!
+}
+type BooleanEnumerationValue {
+    value: Boolean!
+    count: Int!
+}
+type BooleanEnumeration {
+    data: [BooleanEnumerationValue]!
+    meta: CollectionMeta!
+}
+type Parent {
+    child1: String
+}
+type Host @key(fields: "id") {
+    id: String
+    parent: Parent
+}
+type Hosts {
+    data: [Host]!
+    meta: CollectionMeta!
+}
+input FilterTimestamp {
+    lt: String
+    lte: String
+    gt: String
+    gte: String
+    eq: String
+}
+input FilterInt {
+    lt: Int
+    lte: Int
+    gt: Int
+    gte: Int
+}
+input FilterString {
+    eq: String
+}
+input FilterStringArray {
+    contains_all: [String]
+    contains_any: [String]
+}
+input FilterBoolean {
+    is: Boolean
+}
+input AggregationFilter {
+    search: FilterString
+}
+input ParentFilter {
+    child1: FilterString
+}
+input HostFilter {
+    id: FilterString
+    parent: ParentFilter
+}
+type Query {
+    Hosts(
+        filter: HostFilter
+        limit: Int = 10
+        offset: Int = 0
+        order_by: HOSTS_ORDER_BY = id
+        order_how: ORDER_DIR = ASC
+    ): Hosts!
+}

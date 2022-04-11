@@ -110,7 +110,7 @@ export class AvroSchemaParser {
 
                     //loop over each subField to build the graphql entities (type, input, enum, etc.)
                     for (const subField of subFields) {
-                        if (field.xjoinIndex !== undefined && !field.xjoinIndex) {
+                        if (subField.xjoinIndex !== undefined && !subField.xjoinIndex) {
                             continue;
                         }
 

@@ -9,6 +9,7 @@ enum ENUMERATION_ORDER_BY {
 }
 enum HOSTS_ORDER_BY {
     id,
+    parent,
 }
 type CollectionMeta {
     count: Int,
@@ -32,6 +33,7 @@ type BooleanEnumeration {
 }
 type Host @key(fields: "id") {
     id: String,
+    parent: JSONObject,
 }
 type Hosts {
     data: [Host]!,
