@@ -20,3 +20,9 @@ export function capitalize(word: string): string {
 export function enumerationName(dirtyName: string): string {
     return dirtyName + 'Enumeration';
 }
+
+export function orderByEnumName(fieldName: string): string {
+    let response = pluralize(fieldName).toUpperCase();
+    response = response + "_ORDER_BY"
+    return response;
+}

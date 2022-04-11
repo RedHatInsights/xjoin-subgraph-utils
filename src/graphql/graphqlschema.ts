@@ -1,5 +1,5 @@
 import {DefaultFilters} from "./default.filters.js";
-import {enumerationName, inputName, queryName, typeName} from "../avro/avroUtils.js";
+import {enumerationName, inputName, orderByEnumName, queryName, typeName} from "../avro/avroUtils.js";
 
 export class GraphQLEnum {
     name: string = "";
@@ -195,12 +195,14 @@ export class GraphqlSchema {
     inputs: GraphQLInput[] = [];
     schemaString: string = "";
     defaultFilters: DefaultFilters;
-    root: string = "";
+    rootQueryName: string = "";
     enumerationsRoot: string = "";
     rootFilter: string = "";
+    rootOrderByEnumName: string = "";
 
     constructor(avroRootName: string) {
-        this.root = queryName(avroRootName);
+        this.rootOrderByEnumName = orderByEnumName(avroRootName);
+        this.rootQueryName = queryName(avroRootName);
         this.enumerationsRoot = typeName(enumerationName(avroRootName))
         this.rootFilter = inputName(avroRootName)
 
@@ -268,6 +270,18 @@ export class GraphqlSchema {
         this.enums.push(graphqlEnum);
     }
 
+    getEnum(enumName: string) {
+        const enumResponse = this.enums.find(({name}) => name === enumName);
+        if (enumResponse === undefined) {
+            throw new Error(`Enum ${enumName} not found on GraphQL Schema`);
+        }
+        return enumResponse;
+    }
+
+    getRootOrderByEnum() {
+        return this.getEnum(this.rootOrderByEnumName);
+    }
+
     addInput(input: GraphQLInput) {
         this.inputs.push(input);
     }
@@ -275,7 +289,7 @@ export class GraphqlSchema {
     getInput(inputName: string): GraphQLInput {
         const input = this.inputs.find(({name}) => name === inputName);
         if (input === undefined) {
-            throw new Error("Input not found");
+            throw new Error(`Input not found: ${inputName} on GraphQL Schema`);
         }
         return input;
     }
@@ -318,7 +332,11 @@ export class GraphqlSchema {
             const enumerationStringArray: string[] = [];
             enumerationStringArray.push(`enum ${enumeration.name} {`);
             for (const value of enumeration.values) {
-                enumerationStringArray.push(value + ',');
+                if (value.includes('.')) {
+                    enumerationStringArray.push(`"${value}",`);
+                } else {
+                    enumerationStringArray.push(value + ',');
+                }
             }
             enumerationStringArray.push('}');
             fullString.push(enumerationStringArray.join(''));

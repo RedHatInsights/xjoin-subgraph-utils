@@ -9,7 +9,6 @@ enum ENUMERATION_ORDER_BY {
 }
 enum HOSTS_ORDER_BY {
     id,
-    parent,
 }
 type CollectionMeta {
     count: Int,

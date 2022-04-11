@@ -8,8 +8,8 @@ enum ENUMERATION_ORDER_BY {
     count
 }
 enum HOSTS_ORDER_BY {
-    id,
-    parent,
+    "host.child1"
+    id
 }
 type CollectionMeta {
     count: Int

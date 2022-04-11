@@ -10,7 +10,7 @@ import {
 import pluralize from "pluralize";
 import {AvroSchema, Field} from "./avroSchema.js";
 import {plainToInstance} from "class-transformer";
-import {enumerationName, capitalize, inputName, typeName} from "./avroUtils.js";
+import {enumerationName, capitalize, inputName, typeName, orderByEnumName} from "./avroUtils.js";
 import {FILTER_TYPES} from "../graphql/types.js";
 
 export class AvroSchemaParser {
@@ -58,7 +58,7 @@ export class AvroSchemaParser {
     }
 
     convertToGraphQL(): GraphqlSchema {
-        return this.parseAvroFields(this.avroSchema.fields);
+        return this.parseAvroFields(this.avroSchema.fields, []);
     }
 
     /*
@@ -82,7 +82,7 @@ export class AvroSchemaParser {
      *   - Added to it's parent's Enumeration Query
      *   - Added to it's parent's ORDER_BY enum
      */
-    parseAvroFields(fields: Field[]): GraphqlSchema {
+    parseAvroFields(fields: Field[], parent: string[]): GraphqlSchema {
         for (const field of fields) {
             //skip fields with xjoinIndex: false
             if (field.xjoinIndex !== undefined && !field.xjoinIndex) {
@@ -101,12 +101,17 @@ export class AvroSchemaParser {
                 let hasPrimaryKey = false;
 
                 if (subFields != null && subFields.length > 0) {
-                    this.graphqlSchema = this.parseAvroFields(subFields);
-
-                    const graphqlInput = new GraphQLInput(inputName(fieldName));
+                    const fieldFilterInput = new GraphQLInput(inputName(fieldName));
                     const orderByEnum = new GraphQLEnum(orderByEnumName(fieldName));
+                    if (fieldGQLType === 'Reference') {
+                        this.graphqlSchema.addEnum(orderByEnum);
+                    }
                     const graphqlType = new GraphQLObjectType(typeName(fieldName));
                     const enumerationType = new GraphQLObjectType(typeName(enumerationName(fieldName)))
+
+                    const newParent = [...parent];
+                    newParent.push(field.name)
+                    this.graphqlSchema = this.parseAvroFields(subFields, newParent);
 
                     //loop over each subField to build the graphql entities (type, input, enum, etc.)
                     for (const subField of subFields) {
@@ -131,9 +136,8 @@ export class AvroSchemaParser {
                         }
 
                         if (subField.getFilterType() != "") {
-                            graphqlInput.addField(new GraphQLInputField(subField.name, subField.getFilterType()));
+                            fieldFilterInput.addField(new GraphQLInputField(subField.name, subField.getFilterType()));
                         }
-                        orderByEnum.addValue(subField.name);
 
                         const subFieldGQLType = subField.getGraphQLType();
                         if (subFieldGQLType === 'Object') {
@@ -153,6 +157,8 @@ export class AvroSchemaParser {
                                 //enumerationType.addField(new GraphQLTypeField(subField.name, 'JSONObject', false, false));
                             }
                         } else {
+                            const orderByValue = parent.length > 0 ? `${parent.join('.')}.${subField.name}` : subField.name;
+                            this.graphqlSchema.getRootOrderByEnum().addValue(orderByValue);
                             graphqlType.addField(new GraphQLField(subField.name, new GraphQLType(subFieldGQLType, false, false)));
 
                             if (subField.getEnumeration()) {
@@ -167,7 +173,7 @@ export class AvroSchemaParser {
                     }
 
                     //add the input and type entities to the graphql schema
-                    this.graphqlSchema.addInput(graphqlInput);
+                    this.graphqlSchema.addInput(fieldFilterInput);
                     this.graphqlSchema.addType(graphqlType);
                     if (field.getEnumeration()) {
                         this.graphqlSchema.addType(enumerationType);
@@ -180,7 +186,6 @@ export class AvroSchemaParser {
                             throw Error(`missing xjoin.primary.key child field on reference field ${field.name}`)
                         }
                         this.graphqlSchema.addQuery(buildQuery(fieldName));
-                        this.graphqlSchema.addEnum(orderByEnum);
                         this.graphqlSchema.addType(buildCollectionType(graphqlType.name));
 
                         if (hasEnumeration) {
@@ -250,10 +255,4 @@ function buildCollectionType(typeName: string): GraphQLObjectType {
     graphqlType.addField(collectionField);
 
     return graphqlType;
-}
-
-function orderByEnumName(fieldName: string): string {
-    let response = pluralize(fieldName).toUpperCase();
-    response = response + "_ORDER_BY"
-    return response;
 }
