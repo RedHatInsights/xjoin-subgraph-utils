@@ -153,7 +153,7 @@ export class AvroSchemaParser {
                                 //enumerationType.addField(new GraphQLTypeField(subField.name, 'JSONObject', false, false));
                             }
                         } else {
-                            const orderByValue = parent.length > 0 ? `${parent.join('.')}.${subField.name}` : subField.name;
+                            const orderByValue = parent.length > 0 ? `${parent.slice(1).join('.')}.${subField.name}` : subField.name;
                             this.graphqlSchema.addRootOrderByField(orderByValue);
                             graphqlType.addField(new GraphQLField(subField.name, new GraphQLType(subFieldGQLType, false, false)));
 
