@@ -290,7 +290,7 @@ export class GraphqlSchema {
     getObjectType(inputName: string): GraphQLObjectType {
         const type = this.types.find(({name}) => name === inputName);
         if (type === undefined) {
-            throw new Error("Type not found");
+            throw new Error(`Object Type not found: ${inputName}`);
         }
         return type;
     }
@@ -298,12 +298,12 @@ export class GraphqlSchema {
     getTypeFromParent(parent: string, child: string): GraphQLType {
         const parentType = this.types.find(({name}) => name === parent);
         if (parentType === undefined) {
-            throw new Error("Type not found");
+            throw new Error(`Parent Type not found: ${parent}`);
         }
 
         const childType = parentType.fields.find(({name}) => name === child);
         if (childType === undefined) {
-            throw new Error("Type not found");
+            throw new Error(`Child Type: ${child} not found on parent: ${parent}`);
         }
         return childType.type;
     }
