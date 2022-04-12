@@ -98,10 +98,6 @@ export class Field {
     }
 
     typeConversion(): FieldTypes {
-        if (this.fieldTypes !== undefined) {
-            return this.fieldTypes;
-        }
-
         let typeString;
         let enumeration;
         let primaryKey = false;
