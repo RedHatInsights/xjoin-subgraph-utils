@@ -1,5 +1,5 @@
 import {DefaultFilters} from "./default.filters.js";
-import {enumerationName, inputName, orderByEnumName, queryName, typeName} from "../avro/avroUtils.js";
+import {enumerationName, inputName, orderByScalarName, queryName, typeName} from "../avro/avroUtils.js";
 
 export class GraphQLEnum {
     name: string = "";
@@ -198,10 +198,11 @@ export class GraphqlSchema {
     rootQueryName: string = "";
     enumerationsRoot: string = "";
     rootFilter: string = "";
-    rootOrderByEnumName: string = "";
+    rootOrderByScalarName: string = "";
+    rootOrderByFields: string[] = [];
 
     constructor(avroRootName: string) {
-        this.rootOrderByEnumName = orderByEnumName(avroRootName);
+        this.rootOrderByScalarName = orderByScalarName(avroRootName);
         this.rootQueryName = queryName(avroRootName);
         this.enumerationsRoot = typeName(enumerationName(avroRootName))
         this.rootFilter = inputName(avroRootName)
@@ -270,16 +271,8 @@ export class GraphqlSchema {
         this.enums.push(graphqlEnum);
     }
 
-    getEnum(enumName: string) {
-        const enumResponse = this.enums.find(({name}) => name === enumName);
-        if (enumResponse === undefined) {
-            throw new Error(`Enum ${enumName} not found on GraphQL Schema`);
-        }
-        return enumResponse;
-    }
-
-    getRootOrderByEnum() {
-        return this.getEnum(this.rootOrderByEnumName);
+    addRootOrderByField(field: string) {
+        this.rootOrderByFields.push(field);
     }
 
     addInput(input: GraphQLInput) {

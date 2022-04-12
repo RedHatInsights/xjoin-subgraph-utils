@@ -10,7 +10,7 @@ import {
 import pluralize from "pluralize";
 import {AvroSchema, Field} from "./avroSchema.js";
 import {plainToInstance} from "class-transformer";
-import {enumerationName, capitalize, inputName, typeName, orderByEnumName} from "./avroUtils.js";
+import {enumerationName, capitalize, inputName, typeName, orderByScalarName} from "./avroUtils.js";
 import {FILTER_TYPES} from "../graphql/types.js";
 
 export class AvroSchemaParser {
@@ -102,10 +102,6 @@ export class AvroSchemaParser {
 
                 if (subFields != null && subFields.length > 0) {
                     const fieldFilterInput = new GraphQLInput(inputName(fieldName));
-                    const orderByEnum = new GraphQLEnum(orderByEnumName(fieldName));
-                    if (fieldGQLType === 'Reference') {
-                        this.graphqlSchema.addEnum(orderByEnum);
-                    }
                     const graphqlType = new GraphQLObjectType(typeName(fieldName));
                     const enumerationType = new GraphQLObjectType(typeName(enumerationName(fieldName)))
 
@@ -158,7 +154,7 @@ export class AvroSchemaParser {
                             }
                         } else {
                             const orderByValue = parent.length > 0 ? `${parent.join('.')}.${subField.name}` : subField.name;
-                            this.graphqlSchema.getRootOrderByEnum().addValue(orderByValue);
+                            this.graphqlSchema.addRootOrderByField(orderByValue);
                             graphqlType.addField(new GraphQLField(subField.name, new GraphQLType(subFieldGQLType, false, false)));
 
                             if (subField.getEnumeration()) {
@@ -187,6 +183,7 @@ export class AvroSchemaParser {
                         }
                         this.graphqlSchema.addQuery(buildQuery(fieldName));
                         this.graphqlSchema.addType(buildCollectionType(graphqlType.name));
+                        this.graphqlSchema.addScalar(orderByScalarName(fieldName));
 
                         if (hasEnumeration) {
                             this.graphqlSchema.addQuery(buildEnumerationQuery(fieldName));
@@ -238,7 +235,7 @@ function buildQuery(fieldName: string): GraphQLQuery {
     graphqlQuery.addParameter(new GraphQLQueryParameter('limit', 'Int', '10'));
     graphqlQuery.addParameter(new GraphQLQueryParameter('offset', 'Int', '0'));
     graphqlQuery.addParameter(new GraphQLQueryParameter(
-        'order_by', orderByEnumName(fieldName), 'id'));
+        'order_by', orderByScalarName(fieldName), 'id'));
     graphqlQuery.addParameter(new GraphQLQueryParameter(
         'order_how', 'ORDER_DIR', 'ASC'));
     graphqlQuery.response = new GraphQLType(fieldNamePlural, false, true);

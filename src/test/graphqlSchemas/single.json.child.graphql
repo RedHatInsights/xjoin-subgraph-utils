@@ -1,4 +1,6 @@
 scalar JSONObject
+scalar HostsOrderBy
+
 enum ORDER_DIR {
     ASC,
     DESC,
@@ -6,9 +8,6 @@ enum ORDER_DIR {
 enum ENUMERATION_ORDER_BY {
     value,
     count,
-}
-enum HOSTS_ORDER_BY {
-    id,
 }
 type CollectionMeta {
     count: Int,
@@ -72,7 +71,7 @@ type Query {
         filter: HostFilter,
         limit: Int = 10,
         offset: Int = 0,
-        order_by: HOSTS_ORDER_BY = id,
+        order_by: HostsOrderBy = id,
         order_how: ORDER_DIR = ASC,
     ): Hosts!
 }
