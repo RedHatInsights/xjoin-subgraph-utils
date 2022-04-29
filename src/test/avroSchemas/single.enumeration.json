@@ -1,0 +1,32 @@
+{
+  "type": "record",
+  "name": "Value",
+  "namespace": "hosts",
+  "fields": [
+    {
+      "name": "host",
+      "type": {
+        "type": "record",
+        "xjoin.type": "reference",
+        "fields": [
+          {
+            "name": "id",
+            "type": {
+              "type": "string",
+              "xjoin.type": "string",
+              "xjoin.primary.key": true
+            }
+          },
+          {
+            "name": "reporter",
+            "type": {
+              "type": "string",
+              "xjoin.type": "string",
+              "xjoin.enumeration": true
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

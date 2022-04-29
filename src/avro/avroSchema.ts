@@ -1,5 +1,7 @@
 import {Expose, Type as ClassType} from "class-transformer";
 import {inputName} from "./avroUtils.js";
+import {GRAPHQL_TYPES, GRAPHQL_FILTER_TYPES} from "../graphql/types.js";
+import {XJOIN_TYPES} from "./types.js";
 
 export class AvroSchema  {
     @ClassType(() => Type) //TODO: handle all three types
@@ -98,57 +100,55 @@ export class Field {
     }
 
     typeConversion(): FieldTypes {
-        let typeString;
-        let enumeration;
-        let primaryKey = false;
-        let avroType;
-        let xjoinType;
+        let type;
         if (typeof this.type === 'string') {
-            xjoinType = this.xjoinType;
-            avroType = this.type;
-            typeString = this.type; //TODO: xjoinType
-            enumeration = this.xjoinEnumeration;
+            type = this;
         } else if (Array.isArray(this.type)) {
-            avroType = this.type[1].type;
-            typeString = this.type[1].xjoinType;
-            enumeration = this.type[1].xjoinEnumeration;
-            primaryKey = this.type[1].xjoinPrimaryKey;
-            xjoinType = this.type[1].xjoinType;
-        } else { //single type object
-            avroType = this.type.type;
-            typeString = this.type.xjoinType;
-            enumeration = this.type.xjoinEnumeration;
-            primaryKey = this.type.xjoinPrimaryKey;
-            xjoinType = this.type.xjoinType;
+            const errorMessage =
+                `Invalid field: ${this.name}. ` +
+                'Fields are only allowed to have at most 2 types. When more than one type is used, ' +
+                'the first must be null and the second must be a valid type object.';
+            if (this.type.length > 2) {
+                throw new Error(errorMessage);
+            } else if (this.type.length === 1) {
+                type = this.type[0];
+            } else if (this.type.length === 2) {
+                if (this.type[0].type !== 'null') {
+                    throw new Error(errorMessage);
+                }
+                type = this.type[1];
+            }
+        } else {
+            type = this.type;
         }
 
         this.fieldTypes = {
             graphqlType: "",
             filterType: "",
-            enumeration,
-            primaryKey,
-            avroType,
-            xjoinType
+            enumeration: type.xjoinEnumeration ? type.xjoinEnumeration : false,
+            primaryKey: type.xjoinPrimaryKey ? type.xjoinPrimaryKey : false,
+            avroType: type.type,
+            xjoinType: type.xjoinType
         };
 
-        switch (typeString) {
-            case 'date_nanos': {
-                this.fieldTypes.graphqlType = 'String';
-                this.fieldTypes.filterType = 'FilterTimestamp';
+        switch (type.xjoinType) {
+            case XJOIN_TYPES.date_nanos: {
+                this.fieldTypes.graphqlType = GRAPHQL_TYPES.String;
+                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_TIMESTAMP;
                 break;
             }
-            case 'string': {
-                this.fieldTypes.graphqlType = 'String';
-                this.fieldTypes.filterType = 'FilterString';
+            case XJOIN_TYPES.string: {
+                this.fieldTypes.graphqlType = GRAPHQL_TYPES.String;
+                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
                 break;
             }
-            case 'boolean': {
-                this.fieldTypes.graphqlType = 'Boolean';
-                this.fieldTypes.filterType = 'FilterBoolean';
+            case XJOIN_TYPES.boolean: {
+                this.fieldTypes.graphqlType = GRAPHQL_TYPES.Boolean;
+                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_BOOLEAN;
                 break;
             }
-            case 'json': {
-                this.fieldTypes.graphqlType = 'Object';
+            case XJOIN_TYPES.json: {
+                this.fieldTypes.graphqlType = GRAPHQL_TYPES.Object;
 
                 if (this.hasChildren()) {
                     this.fieldTypes.filterType = inputName(this.name)
@@ -157,24 +157,24 @@ export class Field {
                 }
                 break;
             }
-            case 'record': { //TODO: is this a valid xjoin.type?
-                this.fieldTypes.graphqlType = 'Object';
-                this.fieldTypes.filterType = 'FilterString';
+            case XJOIN_TYPES.record: { //TODO: is this a valid xjoin.type?
+                this.fieldTypes.graphqlType = GRAPHQL_TYPES.Object;
+                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
                 break;
             }
-            case 'reference': {
-                this.fieldTypes.graphqlType = 'Reference';
-                this.fieldTypes.filterType = 'FilterString';
+            case XJOIN_TYPES.reference: {
+                this.fieldTypes.graphqlType = GRAPHQL_TYPES.Reference;
+                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
                 break;
             }
-            case 'array': {
-                this.fieldTypes.graphqlType = '[String]'; //TODO handle different array item types
-                this.fieldTypes.filterType = 'FilterStringArray';
+            case XJOIN_TYPES.array: {
+                this.fieldTypes.graphqlType = GRAPHQL_TYPES.StringArray; //TODO handle different array item types
+                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING_ARRAY;
                 break;
             }
             default: {
-                this.fieldTypes.graphqlType = 'String';
-                this.fieldTypes.filterType = 'FilterString';
+                this.fieldTypes.graphqlType = GRAPHQL_TYPES.String;
+                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
                 break;
             }
         }

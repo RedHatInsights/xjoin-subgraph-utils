@@ -15,6 +15,14 @@ function loadAvroSchemaFromFile(name: string): string {
     return readFileSync(`${__dirname}/../test/avroSchemas/${name}.json`).toString();
 }
 
+function enumerationTest(fileName: string) {
+    const avroSchema = JSON.parse(loadAvroSchemaFromFile(fileName));
+    const avroSchemaParser = new AvroSchemaParser(JSON.stringify(avroSchema));
+    const graphqlSchema = gql(avroSchemaParser.convertToGraphQL().toString());
+    const expectedGraphqlSchema = gql(loadGraphqlSchemaFromFile(fileName))
+    expect(graphqlSchema.definitions).toEqual(expectedGraphqlSchema.definitions);
+}
+
 describe('AvroSchemaParser', () => {
     describe('constructor', () => {
         test('throws an error when missing parameter avroSchema', () => {
@@ -293,6 +301,28 @@ describe('AvroSchemaParser', () => {
     });
 
     describe('convertToGraphQL enumerations', () => {
+        test('correctly adds enumeration elements when a single field has enumeration: true', async () => {
+            enumerationTest('single.enumeration');
+        });
 
+        test('correctly adds enumeration elements when a multiple fields have enumeration: true', async () => {
+            enumerationTest('multiple.enumerations');
+        });
+
+        test('correctly adds enumeration elements when a nested field has enumeration: true', async () => {
+            enumerationTest('nested.enumeration');
+        });
+
+        test('correctly adds enumeration elements when both a root and a nested field have enumeration: true', async () => {
+            enumerationTest('nested.and.root.enumeration');
+        });
+
+        test('correctly adds enumeration elements when a deeply nested field has enumeration: true', async () => {
+            enumerationTest('deeply.nested.enumeration');
+        });
+
+        test('correctly adds enumeration elements when a boolean field has enumeration: true', async () => {
+            enumerationTest('boolean.enumeration');
+        });
     });
 });

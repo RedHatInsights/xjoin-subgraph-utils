@@ -11,7 +11,7 @@ import pluralize from "pluralize";
 import {AvroSchema, Field} from "./avroSchema.js";
 import {plainToInstance} from "class-transformer";
 import {enumerationName, capitalize, inputName, typeName, orderByScalarName} from "./avroUtils.js";
-import {FILTER_TYPES} from "../graphql/types.js";
+import {GRAPHQL_FILTER_TYPES} from "../graphql/types.js";
 
 export class AvroSchemaParser {
     avroSchema: AvroSchema;
@@ -206,12 +206,12 @@ function buildEnumerationField(fieldGQLType: string, fieldName: string, rootFilt
     }
 
     if (!fieldType) {
-        return null
+        throw new Error(`cannot use xjoin.enumeration with field type: ${fieldGQLType} on field: ${fieldName}`);
     }
 
     const enumerationField = new GraphQLField(fieldName, new GraphQLType(fieldType, false, false));
     enumerationField.addParameter(new GraphQLQueryParameter(rootFilter, rootFilter))
-    enumerationField.addParameter(new GraphQLQueryParameter('filter', FILTER_TYPES.AGGREGATION_FILTER))
+    enumerationField.addParameter(new GraphQLQueryParameter('filter', GRAPHQL_FILTER_TYPES.AGGREGATION_FILTER))
     enumerationField.addParameter(new GraphQLQueryParameter('limit', 'Int', '10'));
     enumerationField.addParameter(new GraphQLQueryParameter('offset', 'Int', '0'));
     enumerationField.addParameter(new GraphQLQueryParameter(

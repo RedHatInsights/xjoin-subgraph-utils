@@ -1,0 +1,63 @@
+{
+  "type": "record",
+  "name": "Value",
+  "namespace": "hosts",
+  "fields": [
+    {
+      "name": "host",
+      "type": {
+        "type": "record",
+        "xjoin.type": "reference",
+        "fields": [
+          {
+            "name": "id",
+            "type": {
+              "type": "string",
+              "xjoin.type": "string",
+              "xjoin.primary.key": true
+            }
+          },
+          {
+            "name": "system_profile_facts",
+            "type": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "xjoin.type": "json",
+                "xjoin.fields": [
+                  {
+                    "name": "arch",
+                    "type": {
+                      "type": "string",
+                      "xjoin.type": "string",
+                      "xjoin.enumeration": true
+                    }
+                  },
+                  {
+                    "name": "operating_system",
+                    "type": {
+                      "type": "string",
+                      "xjoin.type": "json",
+                      "xjoin.fields": [
+                        {
+                          "name": "major",
+                          "type": {
+                            "type": "string",
+                            "xjoin.type": "byte",
+                            "xjoin.enumeration": true
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

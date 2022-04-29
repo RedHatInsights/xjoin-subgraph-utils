@@ -1,4 +1,4 @@
-import {FILTER_TYPES} from "./types.js";
+import {GRAPHQL_FILTER_TYPES} from "./types.js";
 import {GraphQLInput, GraphQLInputField} from "./graphqlschema.js";
 
 interface DefaultFilter {
@@ -11,33 +11,33 @@ export class DefaultFilters {
     filters: DefaultFilter[] = []
 
     constructor() {
-        const filterTimestampInput = new GraphQLInput(FILTER_TYPES.FILTER_TIMESTAMP);
+        const filterTimestampInput = new GraphQLInput(GRAPHQL_FILTER_TYPES.FILTER_TIMESTAMP);
         filterTimestampInput.addField(new GraphQLInputField('lt', 'String'));
         filterTimestampInput.addField(new GraphQLInputField('lte', 'String'));
         filterTimestampInput.addField(new GraphQLInputField('gt', 'String'));
         filterTimestampInput.addField(new GraphQLInputField('gte', 'String'));
         filterTimestampInput.addField(new GraphQLInputField('eq', 'String'));
         this.filters.push({
-            name: FILTER_TYPES.FILTER_TIMESTAMP,
+            name: GRAPHQL_FILTER_TYPES.FILTER_TIMESTAMP,
             input: filterTimestampInput,
             buildESFilter: this.rangeFilter
         });
 
-        const filterIntInput = new GraphQLInput(FILTER_TYPES.FILTER_INT);
+        const filterIntInput = new GraphQLInput(GRAPHQL_FILTER_TYPES.FILTER_INT);
         filterIntInput.addField(new GraphQLInputField('lt', 'Int'));
         filterIntInput.addField(new GraphQLInputField('lte', 'Int'));
         filterIntInput.addField(new GraphQLInputField('gt', 'Int'));
         filterIntInput.addField(new GraphQLInputField('gte', 'Int'));
         this.filters.push({
-            name: FILTER_TYPES.FILTER_INT,
+            name: GRAPHQL_FILTER_TYPES.FILTER_INT,
             input: filterIntInput,
             buildESFilter: this.rangeFilter
         })
 
-        const filterStringInput = new GraphQLInput(FILTER_TYPES.FILTER_STRING);
+        const filterStringInput = new GraphQLInput(GRAPHQL_FILTER_TYPES.FILTER_STRING);
         filterStringInput.addField(new GraphQLInputField('eq', 'String'));
         this.filters.push({
-            name: FILTER_TYPES.FILTER_STRING,
+            name: GRAPHQL_FILTER_TYPES.FILTER_STRING,
             input: filterStringInput,
             buildESFilter: (filterKey: string, filterValue: Record<any, any>, root: string) => {
                 return {
@@ -48,11 +48,11 @@ export class DefaultFilters {
             }
         })
 
-        const filterStringArrayInput = new GraphQLInput(FILTER_TYPES.FILTER_STRING_ARRAY);
+        const filterStringArrayInput = new GraphQLInput(GRAPHQL_FILTER_TYPES.FILTER_STRING_ARRAY);
         filterStringArrayInput.addField(new GraphQLInputField('contains_all', '[String]'));
         filterStringArrayInput.addField(new GraphQLInputField('contains_any', '[String]'));
         this.filters.push({
-            name: FILTER_TYPES.FILTER_STRING_ARRAY,
+            name: GRAPHQL_FILTER_TYPES.FILTER_STRING_ARRAY,
             input: filterStringArrayInput,
             buildESFilter: (filterKey: string, filterValue: Record<any, any>, root: string) => {
                 if (filterValue.contains_all) {
@@ -78,10 +78,10 @@ export class DefaultFilters {
             }
         })
 
-        const filterBooleanInput = new GraphQLInput(FILTER_TYPES.FILTER_BOOLEAN);
+        const filterBooleanInput = new GraphQLInput(GRAPHQL_FILTER_TYPES.FILTER_BOOLEAN);
         filterBooleanInput.addField(new GraphQLInputField('is', 'Boolean'));
         this.filters.push({
-            name: FILTER_TYPES.FILTER_BOOLEAN,
+            name: GRAPHQL_FILTER_TYPES.FILTER_BOOLEAN,
             input: filterBooleanInput,
             buildESFilter: (filterKey: string, filterValue: Record<any, any>, root: string) => {
                 return {
@@ -92,10 +92,10 @@ export class DefaultFilters {
             }
         })
 
-        const aggregationFilter = new GraphQLInput(FILTER_TYPES.AGGREGATION_FILTER);
-        aggregationFilter.addField(new GraphQLInputField('search', FILTER_TYPES.FILTER_STRING))
+        const aggregationFilter = new GraphQLInput(GRAPHQL_FILTER_TYPES.AGGREGATION_FILTER);
+        aggregationFilter.addField(new GraphQLInputField('search', GRAPHQL_FILTER_TYPES.FILTER_STRING))
         this.filters.push({
-            name: FILTER_TYPES.AGGREGATION_FILTER,
+            name: GRAPHQL_FILTER_TYPES.AGGREGATION_FILTER,
             input: aggregationFilter,
             buildESFilter: () => {
                 return {}
