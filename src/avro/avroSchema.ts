@@ -185,9 +185,18 @@ export class Field {
     getChildren() : Field[] {
         let childFields : Field[] = [];
         if (Array.isArray(this.type)) {
-            childFields = this.type[1].fields; //TODO can't assume type[1]
+            if (this.type.length === 1) {
+                childFields = this.type[0].fields;
+            } else {
+                childFields = this.type[1].fields;
+            }
+
             if (childFields.length === 0) {
-                childFields = this.type[1].xjoinFields;
+                if (this.type.length === 1) {
+                    childFields = this.type[0].xjoinFields;
+                } else {
+                    childFields = this.type[1].xjoinFields;
+                }
             }
         } else if (typeof this.type === 'object') {
             childFields = this.type.fields;
@@ -207,7 +216,11 @@ export class Field {
         if (typeof this.type === 'string') {
             this.xjoinEnumeration = true;
         } else if (Array.isArray(this.type)) {
-            this.type[1].xjoinEnumeration = value;
+            if (this.type.length === 1) {
+                this.type[0].xjoinEnumeration = value;
+            } else {
+                this.type[1].xjoinEnumeration = value;
+            }
         } else { //single type object
             this.type.xjoinEnumeration = value;
         }
