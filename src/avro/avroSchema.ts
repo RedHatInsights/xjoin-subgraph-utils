@@ -99,7 +99,7 @@ export class Field {
         return this.typeConversion().xjoinType;
     }
 
-    typeConversion(): FieldTypes {
+    getTypeObject(): Record<any, any> {
         let type;
         if (typeof this.type === 'string') {
             type = this;
@@ -121,6 +121,11 @@ export class Field {
         } else {
             type = this.type;
         }
+        return type;
+    }
+
+    typeConversion(): FieldTypes {
+        const type = this.getTypeObject();
 
         this.fieldTypes = {
             graphqlType: "",
@@ -157,11 +162,6 @@ export class Field {
                 }
                 break;
             }
-            case XJOIN_TYPES.record: { //TODO: is this a valid xjoin.type?
-                this.fieldTypes.graphqlType = GRAPHQL_TYPES.Object;
-                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
-                break;
-            }
             case XJOIN_TYPES.reference: {
                 this.fieldTypes.graphqlType = GRAPHQL_TYPES.Reference;
                 this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
@@ -172,10 +172,13 @@ export class Field {
                 this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING_ARRAY;
                 break;
             }
-            default: {
+            case XJOIN_TYPES.byte: {
                 this.fieldTypes.graphqlType = GRAPHQL_TYPES.String;
                 this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
                 break;
+            }
+            default: {
+                throw Error(`encountered invalid xjoin.type: ${type.xjoinType} on field: ${this.name}`)
             }
         }
 
@@ -232,10 +235,10 @@ export class Field {
         if (!this.name) {
             throw Error(`field is missing name attribute`)
         }
-        if (!this.getAvroType()) {
+        if (!this.getTypeObject().type) {
             throw Error(`field ${this.name} is missing type attribute`)
         }
-        if (!this.getXJoinType()) {
+        if (!this.getTypeObject().xjoinType) {
             throw Error(`field ${this.name} is missing xjoin.type attribute`)
         }
 

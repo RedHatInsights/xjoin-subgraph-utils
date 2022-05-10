@@ -2,9 +2,10 @@ import 'reflect-metadata';
 import {plainToInstance} from "class-transformer";
 import {Field} from "./avroSchema.js";
 import {AvroSchemaParser} from "./avroSchemaParser";
+import {GRAPHQL_FILTER_TYPES, GRAPHQL_TYPES} from "../graphql";
 
 describe('Field', () => {
-    describe('Object Type String', () => {
+    describe('Object Type', () => {
         const fieldJSON = {
             "name": "id",
             "type": {
@@ -78,7 +79,7 @@ describe('Field', () => {
         });
     })
 
-    describe('Single Array Type String', () => {
+    describe('Single Array Type', () => {
         const fieldArrayJSON = {
             "name": "id",
             "type": [{
@@ -152,7 +153,7 @@ describe('Field', () => {
         });
     });
 
-    describe('Multiple Array Type String', () => {
+    describe('Multiple Array Type', () => {
         const fieldMultipleArrayJSON = {
             "name": "id",
             "type": [{
@@ -263,4 +264,287 @@ describe('Field', () => {
                 'the first must be null and the second must be a valid type object.');
         });
     });
+
+    describe('Types', () => {
+        test('correctly converts xjoin.type date_nanos', () => {
+            const fieldJSON = {
+                "name": "id",
+                "type": {
+                    "type": "string",
+                    "xjoin.type": "date_nanos"
+                }
+            }
+
+            const field = plainToInstance(Field, fieldJSON);
+            const fieldTypes = field.typeConversion();
+            expect(fieldTypes).toStrictEqual({
+                graphqlType: 'String',
+                filterType: 'FilterTimestamp',
+                enumeration: false,
+                primaryKey: false,
+                avroType: 'string',
+                xjoinType: 'date_nanos'
+            });
+        });
+
+        test('correctly converts xjoin.type string', () => {
+            const fieldJSON = {
+                "name": "id",
+                "type": {
+                    "type": "string",
+                    "xjoin.type": "string"
+                }
+            }
+
+            const field = plainToInstance(Field, fieldJSON);
+            const fieldTypes = field.typeConversion();
+            expect(fieldTypes).toStrictEqual({
+                graphqlType: 'String',
+                filterType: 'FilterString',
+                enumeration: false,
+                primaryKey: false,
+                avroType: 'string',
+                xjoinType: 'string'
+            });
+        });
+
+        test('correctly converts xjoin.type boolean', () => {
+            const fieldJSON = {
+                "name": "id",
+                "type": {
+                    "type": "boolean",
+                    "xjoin.type": "boolean"
+                }
+            }
+
+            const field = plainToInstance(Field, fieldJSON);
+            const fieldTypes = field.typeConversion();
+            expect(fieldTypes).toStrictEqual({
+                graphqlType: 'Boolean',
+                filterType: 'FilterBoolean',
+                enumeration: false,
+                primaryKey: false,
+                avroType: 'boolean',
+                xjoinType: 'boolean'
+            });
+        });
+
+        test('correctly converts xjoin.type json with no children', () => {
+            const fieldJSON = {
+                "name": "id",
+                "type": {
+                    "type": "string",
+                    "xjoin.type": "json"
+                }
+            }
+
+            const field = plainToInstance(Field, fieldJSON);
+            const fieldTypes = field.typeConversion();
+            expect(fieldTypes).toStrictEqual({
+                graphqlType: 'Object',
+                filterType: '',
+                enumeration: false,
+                primaryKey: false,
+                avroType: 'string',
+                xjoinType: 'json'
+            });
+        });
+
+        test('correctly converts xjoin.type json with children', () => {
+            const fieldJSON = {
+                "name": "system_profile",
+                "type": {
+                    "type": "string",
+                    "xjoin.type": "json",
+                    "xjoin.fields": [{
+                        "name": "arch",
+                        "type": {
+                            "xjoin.type": "string"
+                        }
+                    }]
+                }
+            }
+
+            const field = plainToInstance(Field, fieldJSON);
+            const fieldTypes = field.typeConversion();
+            expect(fieldTypes).toStrictEqual({
+                graphqlType: 'Object',
+                filterType: 'SystemProfileFilter',
+                enumeration: false,
+                primaryKey: false,
+                avroType: 'string',
+                xjoinType: 'json'
+            });
+        });
+
+        test('correctly converts xjoin.type reference', () => {
+            const fieldJSON = {
+                "name": "host",
+                "type": {
+                    "type": "record",
+                    "xjoin.type": "reference"
+                }
+            }
+
+            const field = plainToInstance(Field, fieldJSON);
+            const fieldTypes = field.typeConversion();
+            expect(fieldTypes).toStrictEqual({
+                graphqlType: 'Reference',
+                filterType: 'FilterString',
+                enumeration: false,
+                primaryKey: false,
+                avroType: 'record',
+                xjoinType: 'reference'
+            });
+        });
+
+        test('correctly converts xjoin.type string array', () => {
+            const fieldJSON = {
+                "name": "tags_structured",
+                "type": {
+                    "type": "array",
+                    "items": "string",
+                    "xjoin.type": "array"
+                }
+            }
+
+            const field = plainToInstance(Field, fieldJSON);
+            const fieldTypes = field.typeConversion();
+            expect(fieldTypes).toStrictEqual({
+                graphqlType: GRAPHQL_TYPES.StringArray,
+                filterType: GRAPHQL_FILTER_TYPES.FILTER_STRING_ARRAY,
+                enumeration: false,
+                primaryKey: false,
+                avroType: 'array',
+                xjoinType: 'array'
+            });
+        });
+
+        test('throws an error when an invalid xjoin.type is encountered', () => {
+            const fieldJSON = {
+                "name": "tags_structured",
+                "type": {
+                    "type": "string",
+                    "xjoin.type": "asdf"
+                }
+            }
+
+            const field = plainToInstance(Field, fieldJSON);
+            expect(() => {
+                field.typeConversion();
+            }).toThrow(
+                `encountered invalid xjoin.type: asdf on field: tags_structured`);
+        });
+    });
+
+    describe('field.validate()', () => {
+        test('throws an error when field is missing name', () => {
+            const fieldJSON = {
+                "type": {
+                    "type": "string",
+                    "xjoin.type": "string"
+                }
+            }
+
+            const field = plainToInstance(Field, fieldJSON);
+            expect(() => {
+                field.validate();
+            }).toThrow(
+                `field is missing name attribute`);
+        });
+
+        test('throws an error when field is missing xjoin.type', () => {
+            const fieldJSON = {
+                "name": "tags_structured",
+                "type": {
+                    "type": "string"
+                }
+            }
+
+            const field = plainToInstance(Field, fieldJSON);
+            expect(() => {
+                field.validate();
+            }).toThrow(
+                `field tags_structured is missing xjoin.type attribute`);
+        });
+
+        test('throws an error when field is missing type', () => {
+            const fieldJSON = {
+                "name": "tags_structured",
+                "type": {
+                    "xjoin.type": "string"
+                }
+            }
+
+            const field = plainToInstance(Field, fieldJSON);
+            expect(() => {
+                field.validate();
+            }).toThrow(
+                `field tags_structured is missing type attribute`);
+        });
+    })
+
+    describe('field.getChildren()', () => {
+        test('returns children when type is an array with length 1', () => {
+            const fieldJSON = {
+                "name": "host",
+                "type": [{
+                    "type": "record",
+                    "xjoin.type": "reference",
+                    "fields": [{
+                        "name": "account",
+                        "type": {
+                            "type": "string",
+                            "xjoin.type": "string"
+                        }
+                    }]
+                }]
+            }
+            const field = plainToInstance(Field, fieldJSON);
+            const children = field.getChildren();
+            expect(children).toHaveLength(1);
+            expect(children).toEqual([{
+                "default": "",
+                "name": "account",
+                "type": {
+                    "type": "string",
+                    "xjoinType": "string",
+                    "name": "",
+                    "items": "",
+                    "fields":[]
+                }
+            }]);
+        })
+    });
+
+    test('returns children when type is an array with length 1 with xjoin.fields', () => {
+        const fieldJSON = {
+            "name": "host",
+            "type": [{
+                "type": "string",
+                "xjoin.type": "json",
+                "xjoin.fields": [{
+                    "name": "account",
+                    "type": {
+                        "type": "string",
+                        "xjoin.type": "string"
+                    }
+                }]
+            }]
+        }
+        const field = plainToInstance(Field, fieldJSON);
+        const children = field.getChildren();
+        expect(children).toHaveLength(1);
+        expect(children).toEqual([{
+            "default": "",
+            "name": "account",
+            "type": {
+                "type": "string",
+                "xjoinType": "string",
+                "name": "",
+                "items": "",
+                "fields":[]
+            }
+        }]);
+    })
 });

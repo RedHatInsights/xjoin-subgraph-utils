@@ -5,6 +5,7 @@ export const XJOIN_TYPES = {
     json: 'json',
     record: 'record',
     reference: 'reference',
-    array: 'array'
+    array: 'array',
+    byte: 'byte'
 };
 

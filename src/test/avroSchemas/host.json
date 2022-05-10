@@ -8,6 +8,7 @@
       "type": {
         "type": "record",
         "name": "xjoindatasourcepipeline.hosts.Value",
+        "xjoin.type": "reference",
         "fields": [
           {
             "name": "id",
@@ -384,8 +385,7 @@
               "xjoin.type": "array"
             }
           }
-        ],
-        "xjoin.type": "reference"
+        ]
       }
     }
   ],
