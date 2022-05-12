@@ -1,13 +1,13 @@
 import { Logger } from "../logging/logger.js";
 import {
-    ESAggregateParams,
-    ESAggregateResponse,
+    ESEnumerationParams,
+    ESEnumerationResponse,
     ESSearchParams,
     ESSearchResponse
 } from "./types";
 
 import {Client, ClientOptions} from '@elastic/elasticsearch';
-import {ElasticSearchError, ResultWindowError} from "./errors.js";
+import {extractPage} from "./utils.js";
 
 export class ElasticSearchClient {
     client: any;
@@ -18,7 +18,11 @@ export class ElasticSearchClient {
         this.index = index;
     }
 
-    async aggregateQuery(params: ESAggregateParams): Promise<ESAggregateResponse> {
+    /**
+     * Performs a search request to run an agg query. This is used to count unique values of a field.
+     * Supports pagination, filtering, sorting.
+     */
+    async enumerationQuery(params: ESEnumerationParams): Promise<ESEnumerationResponse> {
         const order: Record<any,any>[] = []
         if (params.order_by === 'count') {
             order.push({'_count': params.order_how})
@@ -66,7 +70,7 @@ export class ElasticSearchClient {
             const {body} = await this.client.search(searchRequest);
             Logger.debug('Elasticsearch query', {request: searchRequest, response: body});
 
-            const page = this.extractPage(
+            const page = extractPage(
                 body.aggregations[params.field].buckets,
                 params.limit,
                 params.offset
@@ -86,10 +90,9 @@ export class ElasticSearchClient {
         }
     }
 
-    extractPage(list: any[], limit: number, offset: number): any[] {
-        return list.slice(offset, offset + limit);
-    }
-
+    /**
+     * Performs a paginated, filterable search query. Parses the response to be more easily consumed.
+     */
     async search(params: ESSearchParams): Promise<ESSearchResponse> {
         const response: ESSearchResponse = {
             data: [],
@@ -111,8 +114,8 @@ export class ElasticSearchClient {
         const sort: any = {};
         if (params.order_by !== undefined && params.order_how !== undefined) {
             sort[params.order_by] = params.order_how;
+            searchRequest.body.sort = [sort];
         }
-        searchRequest.body.sort = [sort];
 
         //pagination
         if (params.offset !== undefined) {
@@ -146,41 +149,14 @@ export class ElasticSearchClient {
         }
         return response;
     }
-    
-    async runQuery(query: any): Promise<any> {
-        Logger.debug('executing query', ['query', query]);
 
-        try {
-            const result = await this.client.search(query);
-            Logger.debug('query finished', result);
-            return result;
-        } catch (err) {
-            Logger.debug(err);
-
-            const reason = err?.meta?.body?.error?.root_cause[0]?.reason || ''
-            if (reason.startsWith('Result window is too large')) {
-                // check if the request should have succeeded (eg. the requested page
-                // contains hosts that should be able to be queried)
-                const requestedNumber = query?.body?.from || 0;
-
-                query.body.from = 0;
-                query.body.size = 0;
-
-                const countQueryRes = await this.client.search(query);
-                const hits = countQueryRes?.body?.hits?.total?.value || 0;
-
-                // only return the request window error if the requested page should
-                // have contained at least one host
-                if (hits >= requestedNumber) {
-                    throw new ResultWindowError(err);
-                }
-
-                // return an empty response (same behavior as when there is no host
-                // at the specified offset within result window)
-                return countQueryRes;
-            }
-
-            throw err;
-        }
+    /**
+     * Run an arbitrary raw Elasticsearch query.
+     */
+    async rawQuery(body: Record<any, any>): Promise<any> {
+        Logger.debug('executing query', ['body', body]);
+        const result = await this.client.search({body: body, index: this.index});
+        Logger.debug('query finished', result);
+        return result;
     }
 }

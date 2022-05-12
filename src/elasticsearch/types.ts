@@ -1,4 +1,4 @@
-export type ESAggregateResponse = {
+export type ESEnumerationResponse = {
     data: any[],
     total: number,
     field: string
@@ -10,7 +10,7 @@ export type ESSearchResponse = {
 };
 
 export type ESSearchParams = {
-    filter?: any, //TODO
+    filter?: any,
     sourceFields?: string[],
     limit?: number,
     offset?: number,
@@ -19,7 +19,7 @@ export type ESSearchParams = {
     rootField: string
 };
 
-export type ESAggregateParams = {
+export type ESEnumerationParams = {
     rootFilter?: any,
     fieldFilter?: any,
     limit: number,

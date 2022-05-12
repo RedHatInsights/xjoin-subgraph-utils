@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import {plainToInstance} from "class-transformer";
 import {Field} from "./avroSchema.js";
-import {AvroSchemaParser} from "./avroSchemaParser";
-import {GRAPHQL_FILTER_TYPES, GRAPHQL_TYPES} from "../graphql";
+import {AvroSchemaParser} from "./avroSchemaParser.js";
+import {GRAPHQL_FILTER_TYPES, GRAPHQL_TYPES} from "../graphql/types.js";
 
 describe('Field', () => {
     describe('Object Type', () => {
