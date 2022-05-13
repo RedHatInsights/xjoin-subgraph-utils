@@ -104,12 +104,22 @@ export function elasticsearchResponse(index: string, sources: ESSource[]) {
     return elasticsearchResponseTemplate(hits);
 }
 
-export function elasticsearchResponseTemplate(hits?): Record<any, any> {
+export type ESAggregateBucketTemplate = {
+    count: number,
+    value: string
+}
+
+export type ESAggregationTemplate = {
+    name: string,
+    buckets: ESAggregateBucketTemplate[]
+}
+
+export function elasticsearchResponseTemplate(hits?: Record<any, any>[], aggregations?: ESAggregationTemplate[]): Record<any, any> {
     if (!hits) {
         hits = [];
     }
 
-    return {
+    const response = {
         took: 1,
         timed_out: false,
         _shards: {
@@ -128,6 +138,28 @@ export function elasticsearchResponseTemplate(hits?): Record<any, any> {
             hits: hits
         }
     }
+
+    if (aggregations) {
+        response['aggregations'] = {};
+
+        for (const agg of aggregations) {
+            response['aggregations'][agg.name] = {
+                doc_count_error_upper_bound: 0,
+                sum_other_doc_count: 0,
+                buckets: []
+            }
+
+            for (const bucket of agg.buckets) {
+                response['aggregations'][agg.name]['buckets'].push({
+                    key: bucket.value,
+                    doc_count: bucket.count,
+                    doc_count_error_upper_bound: 0
+                })
+            }
+        }
+    }
+
+    return response;
 }
 
 export function elasticsearchRequestTemplate(): Record<any, any> {

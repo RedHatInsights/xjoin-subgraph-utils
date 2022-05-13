@@ -70,6 +70,10 @@ export class ElasticSearchClient {
             const {body} = await this.client.search(searchRequest);
             Logger.debug('Elasticsearch query', {request: searchRequest, response: body});
 
+            if (body.aggregations[params.field] === undefined) {
+                throw new Error(`Elasticsearch response is missing the aggregation for field: ${params.field}`)
+            }
+
             const page = extractPage(
                 body.aggregations[params.field].buckets,
                 params.limit,

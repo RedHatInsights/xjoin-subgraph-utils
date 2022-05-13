@@ -1,10 +1,10 @@
 import 'reflect-metadata';
 import {
-    elasticsearchResponse,
+    elasticsearchResponse, elasticsearchResponseTemplate,
     mockElasticsearchSearchAPICall,
     testElasticsearchClient, testESConnection
 } from "../test/utils.js";
-import {ESSearchResponse} from "./types.js";
+import {ESEnumerationResponse, ESSearchResponse} from "./types.js";
 
 describe('rawQuery', () => {
     test('successfully executes a simple query', async () => {
@@ -20,7 +20,7 @@ describe('rawQuery', () => {
             }
         };
 
-        const response = elasticsearchResponse(testESConnection.index,[{
+        const response = elasticsearchResponse(testESConnection.index, [{
             id: '1',
             source: {
                 host: {
@@ -93,7 +93,7 @@ describe('rawQuery', () => {
 
 describe('search', () => {
     async function basicSearchTest(mockQuery, searchParams) {
-        const mockResponse = elasticsearchResponse(testESConnection.index,[{
+        const mockResponse = elasticsearchResponse(testESConnection.index, [{
             id: '1',
             source: {
                 host: {
@@ -126,7 +126,7 @@ describe('search', () => {
             rootField: 'host'
         };
 
-        basicSearchTest(mockQuery, searchParams);
+        await basicSearchTest(mockQuery, searchParams);
     });
 
     test('adds sort parameters to elasticsearch query', async () => {
@@ -146,7 +146,7 @@ describe('search', () => {
             order_how: 'ASC',
         };
 
-        basicSearchTest(mockQuery, searchParams);
+        await basicSearchTest(mockQuery, searchParams);
     });
 
     test('adds pagination parameters to elasticsearch query', async () => {
@@ -165,7 +165,7 @@ describe('search', () => {
             offset: 10
         };
 
-        basicSearchTest(mockQuery, searchParams);
+        await basicSearchTest(mockQuery, searchParams);
     });
 
     test('adds filter to elasticsearch query', async () => {
@@ -188,7 +188,7 @@ describe('search', () => {
             filter: {id: '1'}
         };
 
-        basicSearchTest(mockQuery, searchParams);
+        await basicSearchTest(mockQuery, searchParams);
     });
 
     test('responds with 0 results when es query has no hits', async () => {
@@ -203,7 +203,7 @@ describe('search', () => {
             rootField: 'host'
         };
 
-        const mockResponse = elasticsearchResponse(testESConnection.index,[]);
+        const mockResponse = elasticsearchResponse(testESConnection.index, []);
 
         const scope = mockElasticsearchSearchAPICall({
             requestBody: mockQuery,
@@ -271,4 +271,321 @@ describe('search', () => {
 
         scope.done();
     })
+});
+
+describe('enumerationQuery', () => {
+    async function basicEnumerationTest(mockQuery, mockResponse, enumerationParams) {
+        const scope = mockElasticsearchSearchAPICall({
+            requestBody: mockQuery,
+            responseBody: mockResponse
+        });
+
+        const response: ESEnumerationResponse = await testElasticsearchClient().enumerationQuery(enumerationParams);
+        expect(response.field).toBe('reporter');
+        expect(response.data).toEqual([{
+            "value": "puptoo",
+            "count": 1
+        }]);
+        expect(response.total).toBe(1);
+
+        scope.done();
+    }
+
+    test('successfully performs a basic query', async () => {
+        const mockQuery = {
+            _source: [],
+            size: 0,
+            aggs: {
+                reporter: {
+                    terms: {
+                        field: 'reporter',
+                        size: '10000',
+                        order: [{
+                            _key: 'ASC'
+                        }],
+                        show_term_doc_count_error: true
+                    }
+                }
+            }
+        };
+
+        const mockResponse = elasticsearchResponseTemplate([], [{
+            name: 'reporter',
+            buckets: [{
+                value: 'puptoo',
+                count: 1
+            }]
+        }]);
+
+        const enumerationParams = {
+            field: 'reporter',
+            limit: 10,
+            offset: 0,
+            order_by: 'value',
+            order_how: 'ASC'
+        };
+
+        await basicEnumerationTest(mockQuery, mockResponse, enumerationParams);
+    });
+
+    test('throws an error when aggregation is missing from ES response', async () => {
+        const mockQuery = {
+            _source: [],
+            size: 0,
+            aggs: {
+                id: {
+                    terms: {
+                        field: 'id',
+                        size: '10000',
+                        order: [{
+                            _key: 'ASC'
+                        }],
+                        show_term_doc_count_error: true
+                    }
+                }
+            }
+        };
+
+        const mockResponse = elasticsearchResponseTemplate([], [{
+            name: 'reporter',
+            buckets: [{
+                value: 'puptoo',
+                count: 1
+            }]
+        }]);
+
+        const enumerationParams = {
+            field: 'id',
+            limit: 10,
+            offset: 0,
+            order_by: 'value',
+            order_how: 'ASC'
+        };
+
+        const scope = mockElasticsearchSearchAPICall({
+            requestBody: mockQuery,
+            responseBody: mockResponse
+        });
+
+        await expect(testElasticsearchClient().enumerationQuery(enumerationParams))
+            .rejects
+            .toThrow('Elasticsearch response is missing the aggregation for field: id')
+        scope.done();
+    });
+
+    test('correctly parses order_by=value', async () => {
+        const mockQuery = {
+            _source: [],
+            size: 0,
+            aggs: {
+                reporter: {
+                    terms: {
+                        field: 'reporter',
+                        size: '10000',
+                        order: [{
+                            _key: 'DESC'
+                        }],
+                        show_term_doc_count_error: true
+                    }
+                }
+            }
+        };
+
+        const mockResponse = elasticsearchResponseTemplate([], [{
+            name: 'reporter',
+            buckets: [{
+                value: 'puptoo',
+                count: 1
+            }]
+        }]);
+
+        const enumerationParams = {
+            field: 'reporter',
+            limit: 10,
+            offset: 0,
+            order_by: 'value',
+            order_how: 'DESC'
+        };
+
+        await basicEnumerationTest(mockQuery, mockResponse, enumerationParams);
+    });
+
+    test('correctly parses order_by=count', async () => {
+        const mockQuery = {
+            _source: [],
+            size: 0,
+            aggs: {
+                reporter: {
+                    terms: {
+                        field: 'reporter',
+                        size: '10000',
+                        order: [{
+                            _count: 'ASC'
+                        }],
+                        show_term_doc_count_error: true
+                    }
+                }
+            }
+        };
+
+        const mockResponse = elasticsearchResponseTemplate([], [{
+            name: 'reporter',
+            buckets: [{
+                value: 'puptoo',
+                count: 1
+            }]
+        }]);
+
+        const enumerationParams = {
+            field: 'reporter',
+            limit: 10,
+            offset: 0,
+            order_by: 'count',
+            order_how: 'ASC'
+        };
+
+        await basicEnumerationTest(mockQuery, mockResponse, enumerationParams);
+    });
+
+    test('correctly adds fieldFilter.search.regex to ES query', async () => {
+        const mockQuery = {
+            _source: [],
+            size: 0,
+            aggs: {
+                reporter: {
+                    terms: {
+                        field: 'reporter',
+                        size: '10000',
+                        order: [{
+                            _count: 'ASC'
+                        }],
+                        show_term_doc_count_error: true,
+                        include: '.*puptoo.*'
+                    }
+                }
+            }
+        };
+
+        const mockResponse = elasticsearchResponseTemplate([], [{
+            name: 'reporter',
+            buckets: [{
+                value: 'puptoo',
+                count: 1
+            }]
+        }]);
+
+        const enumerationParams = {
+            fieldFilter: {
+                search: {
+                    regex: '.*puptoo.*'
+                }
+            },
+            field: 'reporter',
+            limit: 10,
+            offset: 0,
+            order_by: 'count',
+            order_how: 'ASC'
+        };
+
+        await basicEnumerationTest(mockQuery, mockResponse, enumerationParams);
+    });
+
+    test('correctly adds fieldFilter.search.eq to ES query', async () => {
+        const mockQuery = {
+            _source: [],
+            size: 0,
+            aggs: {
+                reporter: {
+                    terms: {
+                        field: 'reporter',
+                        size: '10000',
+                        order: [{
+                            _count: 'ASC'
+                        }],
+                        show_term_doc_count_error: true,
+                        include: ['puptoo']
+                    }
+                }
+            }
+        };
+
+        const mockResponse = elasticsearchResponseTemplate([], [{
+            name: 'reporter',
+            buckets: [{
+                value: 'puptoo',
+                count: 1
+            }]
+        }]);
+
+        const enumerationParams = {
+            fieldFilter: {
+                search: {
+                    eq: 'puptoo'
+                }
+            },
+            field: 'reporter',
+            limit: 10,
+            offset: 0,
+            order_by: 'count',
+            order_how: 'ASC'
+        };
+
+        await basicEnumerationTest(mockQuery, mockResponse, enumerationParams);
+    });
+
+    test('correctly applies limit/offset to ES query response', async () => {
+        const mockQuery = {
+            _source: [],
+            size: 0,
+            aggs: {
+                reporter: {
+                    terms: {
+                        field: 'reporter',
+                        size: '10000',
+                        order: [{
+                            _count: 'ASC'
+                        }],
+                        show_term_doc_count_error: true
+                    }
+                }
+            }
+        };
+
+        const mockResponse = elasticsearchResponseTemplate([], [{
+            name: 'reporter',
+            buckets: [{
+                value: 'puptoo',
+                count: 1
+            }, {
+                value: 'foo',
+                count: 2
+            }, {
+                value: 'bar',
+                count: 3
+            }]
+        }]);
+
+        const enumerationParams = {
+            field: 'reporter',
+            limit: 1,
+            offset: 1,
+            order_by: 'count',
+            order_how: 'ASC'
+        };
+
+        const scope = mockElasticsearchSearchAPICall({
+            requestBody: mockQuery,
+            responseBody: mockResponse
+        });
+
+        const response: ESEnumerationResponse = await testElasticsearchClient().enumerationQuery(enumerationParams);
+        expect(response.field).toBe('reporter');
+        expect(response.data).toEqual([{
+            'value': 'foo',
+            'count': 2
+        }]);
+        expect(response.total).toBe(3);
+
+        scope.done();
+    });
 });
