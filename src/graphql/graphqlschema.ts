@@ -39,7 +39,7 @@ export class GraphQLInput {
     getField(fieldName: string): GraphQLInputField {
         const field = this.fields.find(({name}) => name === fieldName);
         if (field === undefined || field === null) {
-            throw new Error('invalid field name'); //TODO
+            throw new Error(`unable to find field: ${fieldName} on GraphQLInput ${this.name}`);
         }
         return field;
     }

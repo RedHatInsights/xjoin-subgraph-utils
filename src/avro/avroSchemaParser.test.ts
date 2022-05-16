@@ -1,19 +1,7 @@
 import 'reflect-metadata';
 import {AvroSchemaParser} from "./avroSchemaParser.js";
-import {readFileSync} from 'fs';
-import {dirname} from 'path';
-import {fileURLToPath} from 'url';
 import {gql} from 'apollo-server-express';
-
-function loadGraphqlSchemaFromFile(name: string): string {
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    return readFileSync(`${__dirname}/../test/graphqlSchemas/${name}.graphql`).toString();
-}
-
-function loadAvroSchemaFromFile(name: string): string {
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    return readFileSync(`${__dirname}/../test/avroSchemas/${name}.json`).toString();
-}
+import {loadAvroSchemaFromFile, loadGraphqlSchemaFromFile} from "../test/utils.js";
 
 function enumerationTest(fileName: string) {
     const avroSchema = JSON.parse(loadAvroSchemaFromFile(fileName));
@@ -28,8 +16,7 @@ describe('AvroSchemaParser', () => {
         test('throws an error when missing parameter avroSchema', () => {
             expect(() => {
                 new AvroSchemaParser('');
-            })
-                .toThrow('avroSchema is a required parameter to create an AvroSchemaParser');
+            }).toThrow('avroSchema is a required parameter to create an AvroSchemaParser');
         })
 
         test("throws an error when avroSchema's type is not record", () => {
@@ -39,8 +26,7 @@ describe('AvroSchemaParser', () => {
 
             expect(() => {
                 new AvroSchemaParser(JSON.stringify(avroSchema));
-            })
-                .toThrow('avroSchema type must be "record"');
+            }).toThrow('avroSchema type must be "record"');
         })
 
         test("throws an error when avroSchema is missing a name", () => {
@@ -50,8 +36,7 @@ describe('AvroSchemaParser', () => {
 
             expect(() => {
                 new AvroSchemaParser(JSON.stringify(avroSchema));
-            })
-                .toThrow('avroSchema must have a name');
+            }).toThrow('avroSchema must have a name');
         })
 
         test('throws an error when avroSchema is missing a root field', () => {
@@ -62,8 +47,7 @@ describe('AvroSchemaParser', () => {
 
             expect(() => {
                 new AvroSchemaParser(JSON.stringify(avroSchema));
-            })
-                .toThrow('avroSchema must contain a single root field');
+            }).toThrow('avroSchema must contain a single root field');
         })
 
         test("throws an error when avroSchema's root field is missing a name", () => {
@@ -75,8 +59,7 @@ describe('AvroSchemaParser', () => {
 
             expect(() => {
                 new AvroSchemaParser(JSON.stringify(avroSchema));
-            })
-                .toThrow('avroSchema root field must have a name');
+            }).toThrow('avroSchema root field must have a name');
         })
 
         test("throws an error when avroSchema's root field is not type=record", () => {
@@ -92,8 +75,7 @@ describe('AvroSchemaParser', () => {
 
             expect(() => {
                 new AvroSchemaParser(JSON.stringify(avroSchema));
-            })
-                .toThrow('avroSchema root field must be type=record');
+            }).toThrow('avroSchema root field must be type=record');
 
             const avroSchema2 = {
                 type: 'record',
@@ -110,8 +92,7 @@ describe('AvroSchemaParser', () => {
 
             expect(() => {
                 new AvroSchemaParser(JSON.stringify(avroSchema2));
-            })
-                .toThrow('avroSchema root field must be type=record');
+            }).toThrow('avroSchema root field must be type=record');
         })
 
         test("throws an error when avroSchema's root field is not xjoin.type=reference", () => {
@@ -127,8 +108,7 @@ describe('AvroSchemaParser', () => {
 
             expect(() => {
                 new AvroSchemaParser(JSON.stringify(avroSchema));
-            })
-                .toThrow('avroSchema root field must be xjoin.type=reference');
+            }).toThrow('avroSchema root field must be xjoin.type=reference');
 
             const avroSchema2 = {
                 type: 'record',
@@ -145,8 +125,7 @@ describe('AvroSchemaParser', () => {
 
             expect(() => {
                 new AvroSchemaParser(JSON.stringify(avroSchema2));
-            })
-                .toThrow('avroSchema root field must be xjoin.type=reference');
+            }).toThrow('avroSchema root field must be xjoin.type=reference');
         })
 
         test("throws an error when avroSchema's root field contains no children", () => {
@@ -164,8 +143,7 @@ describe('AvroSchemaParser', () => {
 
             expect(() => {
                 new AvroSchemaParser(JSON.stringify(avroSchema));
-            })
-                .toThrow('avroSchema root field must contain at least one child field');
+            }).toThrow('avroSchema root field must contain at least one child field');
 
             const avroSchema2 = {
                 type: 'record',
@@ -182,8 +160,7 @@ describe('AvroSchemaParser', () => {
 
             expect(() => {
                 new AvroSchemaParser(JSON.stringify(avroSchema2));
-            })
-                .toThrow('avroSchema root field must contain at least one child field');
+            }).toThrow('avroSchema root field must contain at least one child field');
         });
     });
 

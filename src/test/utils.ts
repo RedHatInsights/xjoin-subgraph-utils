@@ -1,5 +1,20 @@
 import nock, {Scope} from "nock";
 import {ElasticSearchClient} from "../elasticsearch";
+import {dirname} from "path";
+import {fileURLToPath} from "url";
+import {readFileSync} from "fs";
+
+
+export function loadGraphqlSchemaFromFile(name: string): string {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    return readFileSync(`${__dirname}/../test/graphqlSchemas/${name}.graphql`).toString();
+}
+
+export function loadAvroSchemaFromFile(name: string): string {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    return readFileSync(`${__dirname}/../test/avroSchemas/${name}.json`).toString();
+}
+
 
 export type MockESConnection = {
     url: string,
