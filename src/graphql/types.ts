@@ -4,7 +4,7 @@ export const GRAPHQL_FILTER_TYPES = {
     FILTER_BOOLEAN: 'FilterBoolean',
     FILTER_TIMESTAMP: 'FilterTimestamp',
     FILTER_INT: 'FilterInt',
-    AGGREGATION_FILTER: 'AggregationFilter'
+    ENUMERATION_FILTER: 'EnumerationFilter'
 }
 
 export const GRAPHQL_TYPES = {

@@ -59,7 +59,7 @@ input FilterStringArray {
 input FilterBoolean {
     is: Boolean,
 }
-input AggregationFilter {
+input EnumerationFilter {
     search: FilterString,
 }
 input HostFilter {

@@ -35,7 +35,7 @@ type OperatingSystem {
 type OperatingSystemEnumeration {
     major(
         HostFilter: HostFilter,
-        filter: AggregationFilter,
+        filter: EnumerationFilter,
         limit: Int = 10,
         offset: Int = 0,
         order_by: ENUMERATION_ORDER_BY = value,
@@ -48,7 +48,7 @@ type SystemProfileFacts {
 type SystemProfileFactsEnumeration {
     arch(
         HostFilter: HostFilter,
-        filter: AggregationFilter,
+        filter: EnumerationFilter,
         limit: Int = 10,
         offset: Int = 0,
         order_by: ENUMERATION_ORDER_BY = value,
@@ -89,7 +89,7 @@ input FilterStringArray {
 input FilterBoolean {
     is: Boolean,
 }
-input AggregationFilter {
+input EnumerationFilter {
     search: FilterString,
 }
 input OperatingSystemFilter {

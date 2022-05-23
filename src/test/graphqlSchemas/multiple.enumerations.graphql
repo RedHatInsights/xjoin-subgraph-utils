@@ -37,14 +37,14 @@ type Host @key(fields: "id") {
 type HostEnumeration {
     reporter(
         HostFilter: HostFilter,
-        filter: AggregationFilter,
+        filter: EnumerationFilter,
         limit: Int = 10,
         offset: Int = 0,
         order_by: ENUMERATION_ORDER_BY = value,
         order_how: ORDER_DIR = ASC): StringEnumeration,
     another(
         HostFilter: HostFilter,
-        filter: AggregationFilter,
+        filter: EnumerationFilter,
         limit: Int = 10,
         offset: Int = 0,
         order_by: ENUMERATION_ORDER_BY = value,
@@ -77,7 +77,7 @@ input FilterStringArray {
 input FilterBoolean {
     is: Boolean,
 }
-input AggregationFilter {
+input EnumerationFilter {
     search: FilterString,
 }
 input HostFilter {

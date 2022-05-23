@@ -211,7 +211,7 @@ function buildEnumerationField(fieldGQLType: string, fieldName: string, rootFilt
 
     const enumerationField = new GraphQLField(fieldName, new GraphQLType(fieldType, false, false));
     enumerationField.addParameter(new GraphQLQueryParameter(rootFilter, rootFilter))
-    enumerationField.addParameter(new GraphQLQueryParameter('filter', GRAPHQL_FILTER_TYPES.AGGREGATION_FILTER))
+    enumerationField.addParameter(new GraphQLQueryParameter('filter', GRAPHQL_FILTER_TYPES.ENUMERATION_FILTER))
     enumerationField.addParameter(new GraphQLQueryParameter('limit', 'Int', '10'));
     enumerationField.addParameter(new GraphQLQueryParameter('offset', 'Int', '0'));
     enumerationField.addParameter(new GraphQLQueryParameter(

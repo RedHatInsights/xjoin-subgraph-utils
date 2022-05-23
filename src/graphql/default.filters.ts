@@ -4,7 +4,7 @@ import {GraphQLInput, GraphQLInputField} from "./graphqlschema.js";
 interface DefaultFilter {
     name: string,
     input: GraphQLInput,
-    buildESFilter: {(filterKey: string, filterValue: Record<any, any>, root: string): Record<any, any>}
+    buildESFilter: { (filterKey: string, filterValue: Record<any, any>, root: string): Record<any, any> }
 }
 
 export class DefaultFilters {
@@ -32,20 +32,14 @@ export class DefaultFilters {
             name: GRAPHQL_FILTER_TYPES.FILTER_INT,
             input: filterIntInput,
             buildESFilter: this.rangeFilter
-        })
+        });
 
         const filterStringInput = new GraphQLInput(GRAPHQL_FILTER_TYPES.FILTER_STRING);
         filterStringInput.addField(new GraphQLInputField('eq', 'String'));
         this.filters.push({
             name: GRAPHQL_FILTER_TYPES.FILTER_STRING,
             input: filterStringInput,
-            buildESFilter: (filterKey: string, filterValue: Record<any, any>, root: string) => {
-                return {
-                    term: {
-                        [root.toLowerCase() + '.' + filterKey]: filterValue.eq
-                    }
-                };
-            }
+            buildESFilter: this.stringFilter
         })
 
         const filterStringArrayInput = new GraphQLInput(GRAPHQL_FILTER_TYPES.FILTER_STRING_ARRAY);
@@ -54,28 +48,7 @@ export class DefaultFilters {
         this.filters.push({
             name: GRAPHQL_FILTER_TYPES.FILTER_STRING_ARRAY,
             input: filterStringArrayInput,
-            buildESFilter: (filterKey: string, filterValue: Record<any, any>, root: string) => {
-                if (filterValue.contains_all) {
-                    return {
-                        terms_set: {
-                            [root.toLowerCase() + '.' + filterKey]: {
-                                terms: filterValue.contains_all,
-                                minimum_should_match_script: {
-                                    source: 'params.num_terms'
-                                }
-                            }
-                        }
-                    }
-                } else if (filterValue.contains_any) {
-                    return {
-                        'terms': {
-                            [root.toLowerCase() + '.' + filterKey]: filterValue.contains_any
-                        }
-                    }
-                } else {
-                    return {}
-                }
-            }
+            buildESFilter: this.stringArrayFilter
         })
 
         const filterBooleanInput = new GraphQLInput(GRAPHQL_FILTER_TYPES.FILTER_BOOLEAN);
@@ -83,68 +56,113 @@ export class DefaultFilters {
         this.filters.push({
             name: GRAPHQL_FILTER_TYPES.FILTER_BOOLEAN,
             input: filterBooleanInput,
-            buildESFilter: (filterKey: string, filterValue: Record<any, any>, root: string) => {
-                return {
-                    term: {
-                        [root.toLowerCase() + '.' + filterKey]: filterValue.is
-                    }
-                };
-            }
+            buildESFilter: this.booleanFilter
         })
 
-        const aggregationFilter = new GraphQLInput(GRAPHQL_FILTER_TYPES.AGGREGATION_FILTER);
-        aggregationFilter.addField(new GraphQLInputField('search', GRAPHQL_FILTER_TYPES.FILTER_STRING))
+        const enumerationFilter = new GraphQLInput(GRAPHQL_FILTER_TYPES.ENUMERATION_FILTER);
+        enumerationFilter.addField(new GraphQLInputField('search', GRAPHQL_FILTER_TYPES.FILTER_STRING))
         this.filters.push({
-            name: GRAPHQL_FILTER_TYPES.AGGREGATION_FILTER,
-            input: aggregationFilter,
-            buildESFilter: () => {
-                return {}
-            }
+            name: GRAPHQL_FILTER_TYPES.ENUMERATION_FILTER,
+            input: enumerationFilter,
+            buildESFilter: this.enumerationFilter
         });
     }
 
     getFilter(filterName: string): DefaultFilter {
-       const response = this.filters.find( ({ name }) => name === filterName);
-       if (response === undefined) {
-           throw new Error("unable to locate filter: " + filterName)
-       }
-       return response;
+        const response = this.filters.find(({name}) => name === filterName);
+        if (response === undefined) {
+            throw new Error("unable to locate filter: " + filterName)
+        }
+        return response;
     }
 
     hasFilter(filterName: string): boolean {
-        const response = this.filters.find( ({ name }) => name === filterName);
+        const response = this.filters.find(({name}) => name === filterName);
         return response !== undefined;
-
     }
 
-    rangeFilter(filterKey: string, filterValue: Record<any, any>, root: string): Record<any, any> {
+    /**
+     * Convert a GraphQL filter Value to an Elasticsearch filter
+     */
+    rangeFilter(filterKey: string, gqlFilterValue: Record<any, any>, root: string): Record<any, any> {
         const fullFilterKey = root.toLowerCase() + '.' + filterKey;
         const esFilter: any = {};
 
-        if (filterValue.eq !== undefined) {
+        if (gqlFilterValue.eq !== undefined) {
             esFilter.term = {
-                [root.toLowerCase() + '.' + filterKey]: filterValue.eq
+                [root.toLowerCase() + '.' + filterKey]: gqlFilterValue.eq
             };
         } else {
             esFilter.range = {
                 [fullFilterKey]: {}
             }
-            if (filterValue.lt !== undefined) {
-                esFilter.range[fullFilterKey].lt = filterValue.lt
+            if (gqlFilterValue.lt !== undefined) {
+                esFilter.range[fullFilterKey].lt = gqlFilterValue.lt
             }
 
-            if (filterValue.lte !== undefined) {
-                esFilter.range[fullFilterKey].lte = filterValue.lte
+            if (gqlFilterValue.lte !== undefined) {
+                esFilter.range[fullFilterKey].lte = gqlFilterValue.lte
             }
 
-            if (filterValue.gt !== undefined) {
-                esFilter.range[fullFilterKey].gt = filterValue.gt
+            if (gqlFilterValue.gt !== undefined) {
+                esFilter.range[fullFilterKey].gt = gqlFilterValue.gt
             }
 
-            if (filterValue.gte !== undefined) {
-                esFilter.range[fullFilterKey].gte = filterValue.gte
+            if (gqlFilterValue.gte !== undefined) {
+                esFilter.range[fullFilterKey].gte = gqlFilterValue.gte
             }
         }
         return esFilter;
+    }
+
+    stringFilter(filterKey: string, filterValue: Record<any, any>, root: string) {
+        if (!filterValue.eq) {
+            throw new Error(`string filter must contain an eq clause: ${filterKey}`);
+        }
+
+        return {
+            term: {
+                [root.toLowerCase() + '.' + filterKey]: filterValue.eq
+            }
+        };
+    }
+
+    booleanFilter(filterKey: string, filterValue: Record<any, any>, root: string) {
+        if (!filterValue.is) {
+            throw new Error(`boolean filter must contain an is clause: ${filterKey}`);
+        }
+
+        return {
+            term: {
+                [root.toLowerCase() + '.' + filterKey]: filterValue.is
+            }
+        };
+    }
+
+    stringArrayFilter(filterKey: string, filterValue: Record<any, any>, root: string) {
+        if (filterValue.contains_all) {
+            return {
+                terms_set: {
+                    [root.toLowerCase() + '.' + filterKey]: {
+                        terms: filterValue.contains_all,
+                        minimum_should_match_script: {
+                            source: 'params.num_terms'
+                        }
+                    }
+                }
+            }
+        } else if (filterValue.contains_any) {
+            return {
+                'terms': {
+                    [root.toLowerCase() + '.' + filterKey]: filterValue.contains_any
+                }
+            }
+        } else {
+            throw new Error(`string array filter must contain one of [contains_all, contains_any]: ${filterKey}`);
+        }
+    }
+
+    enumerationFilter() {
+        return {}
     }
 }
