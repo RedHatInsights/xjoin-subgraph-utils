@@ -1,0 +1,58 @@
+scalar JSONObject
+enum ORDER_DIR {
+    ASC
+    DESC
+}
+enum ENUMERATION_ORDER_BY {
+    value
+    count
+}
+type CollectionMeta {
+    count: Int
+    total: Int
+}
+type StringEnumerationValue {
+    value: String!
+    count: Int!
+}
+type StringEnumeration {
+    data: [StringEnumerationValue]!
+    meta: CollectionMeta!
+}
+type BooleanEnumerationValue {
+    value: Boolean!
+    count: Int!
+}
+type BooleanEnumeration {
+    data: [BooleanEnumerationValue]!
+    meta: CollectionMeta!
+}
+input FilterTimestamp {
+    lt: String
+    lte: String
+    gt: String
+    gte: String
+    eq: String
+}
+input FilterInt {
+    lt: Int
+    lte: Int
+    gt: Int
+    gte: Int
+}
+input FilterString {
+    eq: String
+}
+input FilterStringArray {
+    contains_all: [String]
+    contains_any: [String]
+}
+input FilterBoolean {
+    is: Boolean
+}
+input EnumerationFilter {
+    search: FilterString
+}
+type Query {
+    TestQuery: string
+}

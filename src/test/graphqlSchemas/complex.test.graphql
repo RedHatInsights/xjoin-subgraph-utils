@@ -1,0 +1,91 @@
+scalar JSONObject
+scalar Cats
+scalar Dogs
+enum ORDER_DIR {
+    ASC
+    DESC
+}
+enum ENUMERATION_ORDER_BY {
+    value
+    count
+}
+enum Cats {
+    Fluffy
+    Pudge
+}
+enum Dogs {
+    Speedy
+    Annie
+}
+type CollectionMeta {
+    count: Int
+    total: Int
+}
+type StringEnumerationValue {
+    value: String!
+    count: Int!
+}
+type StringEnumeration {
+    data: [StringEnumerationValue]!
+    meta: CollectionMeta!
+}
+type BooleanEnumerationValue {
+    value: Boolean!
+    count: Int!
+}
+type BooleanEnumeration {
+    data: [BooleanEnumerationValue]!
+    meta: CollectionMeta!
+}
+type Foo {
+    id: string
+    size: string!
+    names: [string]!
+    ages: [string]
+}
+type Cats {
+    id: string
+    eyecolor: string!
+}
+input FilterTimestamp {
+    lt: String
+    lte: String
+    gt: String
+    gte: String
+    eq: String
+}
+input FilterInt {
+    lt: Int
+    lte: Int
+    gt: Int
+    gte: Int
+}
+input FilterString {
+    eq: String
+}
+input FilterStringArray {
+    contains_all: [String]
+    contains_any: [String]
+}
+input FilterBoolean {
+    is: Boolean
+}
+input EnumerationFilter {
+    search: FilterString
+}
+input Foo {
+    id: string
+    size: string
+}
+input Cats {
+    id: string
+    eyecolor: string
+}
+type Query {
+    TestQuery: string!
+    FooQuery(
+        TestParameter: boolean = false
+        FooParameter: string = bar
+        Foo2Parameter: Foo
+    ): [Foo]!
+}

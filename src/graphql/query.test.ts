@@ -171,7 +171,7 @@ describe('graphqlFiltersToESFilters', () => {
                 eq: 'test'
             }
         };
-        const avroSchemaParser = new AvroSchemaParser(loadAvroSchemaFromFile('minimum.valid'));
+        const avroSchemaParser = new AvroSchemaParser(loadAvroSchemaFromFile('minimum.valid.host'));
         const gqlSchema = avroSchemaParser.convertToGraphQL();
 
         const filters = graphqlFiltersToESFilters(['host'], queryFilters, gqlSchema);

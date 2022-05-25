@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import {DefaultFilters} from "./default.filters.js";
 import {GRAPHQL_FILTER_TYPES} from "./types";
 import {GraphQLInput, GraphQLInputField} from "./graphqlschema";
-import {graphqlFiltersToESFilters} from "./query";
 
 describe('constructor', () => {
     test('adds FilterTimestamp', () => {
