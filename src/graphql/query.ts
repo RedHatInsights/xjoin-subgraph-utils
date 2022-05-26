@@ -1,7 +1,7 @@
 import {inputName} from "../avro/avroUtils.js";
 import {GraphqlSchema} from "./graphqlschema.js";
 import {SelectionNode} from "graphql";
-import {Kind} from "graphql/language/kinds";
+import {Kind} from "graphql/language/kinds.js";
 
 //recursive function to build list of fields that will be included in the elasticsearch response
 export function graphqlSelectionToESSourceFields(parent: string[], selectionSet: Readonly<SelectionNode[]>, sourceFields: string[] = []): string[] {
