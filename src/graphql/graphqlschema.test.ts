@@ -629,6 +629,31 @@ describe('GraphQLSchema', () => {
             gqlSchema.getTypeFromParent('TestInput', 'Foo');
         }).toThrow('Child Type: Foo not found on parent: TestInput on GraphQL Schema: TestSchema');
     });
+
+    test('getQuery returns a query given a name', () => {
+        const gqlSchema = new GraphqlSchema('TestSchema');
+        gqlSchema.addQuery(new GraphQLQuery('TestQuery', new GraphQLType('string')));
+        gqlSchema.addQuery(new GraphQLQuery('Foo', new GraphQLType('boolean')));
+        const query = gqlSchema.getQuery('Foo');
+        expect(query).toEqual({
+            name: 'Foo',
+            parameters: [],
+            response: {
+                isArray: false,
+                isRequired: false,
+                name: 'boolean'
+            }
+        });
+    });
+
+    test('getQuery throws an exception when queryName is not found', () => {
+        const gqlSchema = new GraphqlSchema('TestSchema');
+        gqlSchema.addQuery(new GraphQLQuery('TestQuery', new GraphQLType('string')));
+        gqlSchema.addQuery(new GraphQLQuery('Foo', new GraphQLType('boolean')));
+        expect(() => {
+            gqlSchema.getQuery('Bar')
+        }).toThrow('query Bar not found on GraphQLSchema TestSchema');
+    });
 });
 
 describe('GraphQLSchema.toString()', () => {

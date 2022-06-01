@@ -265,6 +265,15 @@ export class GraphqlSchema {
         this.queries.push(query);
     }
 
+    getQuery(queryName: string) {
+        const query = this.queries.find(({name}) => name === queryName);
+
+        if (query === undefined || query === null) {
+            throw new Error(`query ${queryName} not found on GraphQLSchema ${this.avroRootName}`);
+        }
+        return query;
+    }
+
     addType(type: GraphQLObjectType) {
         this.types.push(type);
     }
