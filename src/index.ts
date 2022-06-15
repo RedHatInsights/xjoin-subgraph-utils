@@ -5,3 +5,4 @@ export * from "./elasticsearch/index.js";
 export * from "./graphql/index.js";
 export * from "./avro/index.js";
 export * from "./elasticsearch/index.js";
+export * from "./test/index.js";
