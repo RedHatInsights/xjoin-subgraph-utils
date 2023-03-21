@@ -24,10 +24,10 @@ export type MockESConnection = {
 };
 
 export const testESConnection: MockESConnection = {
-    url: 'http://test.url:1234',
-    index: 'test.index',
-    username: 'testUsername',
-    password: 'testPassword'
+    url: 'http://localhost:9200',
+    index: 'xjoin.inventory.hosts',
+    username: 'xjoin',
+    password: 'xjoin1337'
 }
 
 export function testElasticsearchClient() {
