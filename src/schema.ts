@@ -6,18 +6,25 @@ export const ARTIFACTS_PATH = 'apis/registry/v2/groups/default/artifacts'
 export type SchemaRegistryParams = {
     protocol: string,
     hostname: string,
-    port: string
+    port: string,
+    baseUrl?: string
 }
 
 export class SchemaRegistry {
     protocol: string;
     hostname: string;
     port: string;
+    baseUrl: string;
 
     constructor(args: SchemaRegistryParams) {
-        this.protocol = args.protocol;
-        this.hostname = args.hostname;
-        this.port = args.port;
+        if (args.baseUrl) {
+            this.baseUrl = args.baseUrl;
+        } else {
+            this.protocol = args.protocol;
+            this.hostname = args.hostname;
+            this.port = args.port;
+            this.baseUrl = `${this.protocol}://${this.hostname}:${this.port}`;
+        }
     }
 
     async registerGraphQLSchema(schemaName: string, schema: string) {
@@ -29,13 +36,11 @@ export class SchemaRegistry {
             throw new XJoinSubgraphUtilsError('schema parameter is required')
         }
 
-        const baseUrl = `${this.protocol}://${this.hostname}:${this.port}`;
-
         let artifactExists = false;
 
         //check if artifact exists
         try {
-            const url = `${baseUrl}/${ARTIFACTS_PATH}/${schemaName}`
+            const url = `${this.baseUrl}/${ARTIFACTS_PATH}/${schemaName}`
             await got.get(url);
             artifactExists = true;
         } catch (e) {
@@ -50,7 +55,7 @@ export class SchemaRegistry {
             try {
                 //apicurio artifact already exists, this will update it with the new schema
                 await got.post(
-                    `${baseUrl}/${ARTIFACTS_PATH}/${schemaName}/versions`,
+                    `${this.baseUrl}/${ARTIFACTS_PATH}/${schemaName}/versions`,
                     {
                         body: schema,
                         headers: {
@@ -64,7 +69,7 @@ export class SchemaRegistry {
         } else {
             try {
                 await got.post(
-                    `${baseUrl}/${ARTIFACTS_PATH}`,
+                    `${this.baseUrl}/${ARTIFACTS_PATH}`,
                     {
                         body: schema,
                         headers: {
