@@ -1,5 +1,5 @@
 import nock, {Scope} from "nock";
-import {ElasticSearchClient} from "../elasticsearch/client.js";
+import {ElasticSearchClient} from "../elasticsearch";
 import {dirname} from "path";
 import {fileURLToPath} from "url";
 import {readFileSync} from "fs";
