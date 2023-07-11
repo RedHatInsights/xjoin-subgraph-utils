@@ -4,7 +4,7 @@ import {
     mockElasticsearchSearchAPICall,
     testElasticsearchClient, testESConnection
 } from "../test/utils.js";
-import {ESEnumerationResponse, ESSearchResponse} from "./types.js";
+import {ESEnumerationParams, ESEnumerationResponse, ESSearchParams, ESSearchResponse} from "./types.js";
 
 describe('rawQuery', () => {
     test('successfully executes a simple query', async () => {
@@ -92,7 +92,7 @@ describe('rawQuery', () => {
 });
 
 describe('search', () => {
-    async function basicSearchTest(mockQuery, searchParams) {
+    async function basicSearchTest(mockQuery: Record<any, any>, searchParams: ESSearchParams) {
         const mockResponse = elasticsearchResponse(testESConnection.index, [{
             id: '1',
             source: {
@@ -274,7 +274,7 @@ describe('search', () => {
 });
 
 describe('enumerationQuery', () => {
-    async function basicEnumerationTest(mockQuery, mockResponse, enumerationParams) {
+    async function basicEnumerationTest(mockQuery: Record<any, any>, mockResponse: Record<any, any>, enumerationParams: ESEnumerationParams) {
         const scope = mockElasticsearchSearchAPICall({
             requestBody: mockQuery,
             responseBody: mockResponse

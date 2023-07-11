@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "strict": true,
     "declaration": true,
     "strictNullChecks": true,
     "target": "es2021", 

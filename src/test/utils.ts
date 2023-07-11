@@ -134,7 +134,7 @@ export function elasticsearchResponseTemplate(hits?: Record<any, any>[], aggrega
         hits = [];
     }
 
-    const response = {
+    const response: Record<any, any> = {
         took: 1,
         timed_out: false,
         _shards: {

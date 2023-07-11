@@ -91,7 +91,7 @@ export class Field {
         return this.typeConversion().primaryKey;
     }
 
-    getAvroType(): string {
+    getAvroType(): string|Type|Type[] {
         return this.typeConversion().avroType;
     }
 
@@ -99,7 +99,7 @@ export class Field {
         return this.typeConversion().xjoinType;
     }
 
-    getTypeObject(): Record<any, any> {
+    getTypeObject(): Type|this|undefined {
         let type;
         if (typeof this.type === 'string') {
             type = this;
@@ -127,7 +127,11 @@ export class Field {
     typeConversion(): FieldTypes {
         const type = this.getTypeObject();
 
-        this.fieldTypes = {
+        if (type === undefined) {
+            throw Error(`missing type during type conversion`)
+        }
+
+        const fieldTypes : FieldTypes = {
             graphqlType: "",
             filterType: "",
             enumeration: type.xjoinEnumeration ? type.xjoinEnumeration : false,
@@ -138,43 +142,43 @@ export class Field {
 
         switch (type.xjoinType) {
             case XJOIN_TYPES.date_nanos: {
-                this.fieldTypes.graphqlType = GRAPHQL_TYPES.String;
-                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_TIMESTAMP;
+                fieldTypes.graphqlType = GRAPHQL_TYPES.String;
+                fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_TIMESTAMP;
                 break;
             }
             case XJOIN_TYPES.string: {
-                this.fieldTypes.graphqlType = GRAPHQL_TYPES.String;
-                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
+                fieldTypes.graphqlType = GRAPHQL_TYPES.String;
+                fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
                 break;
             }
             case XJOIN_TYPES.boolean: {
-                this.fieldTypes.graphqlType = GRAPHQL_TYPES.Boolean;
-                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_BOOLEAN;
+                fieldTypes.graphqlType = GRAPHQL_TYPES.Boolean;
+                fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_BOOLEAN;
                 break;
             }
             case XJOIN_TYPES.json: {
-                this.fieldTypes.graphqlType = GRAPHQL_TYPES.Object;
+                fieldTypes.graphqlType = GRAPHQL_TYPES.Object;
 
                 if (this.hasChildren()) {
-                    this.fieldTypes.filterType = inputName(this.name)
+                    fieldTypes.filterType = inputName(this.name)
                 } else {
-                    this.fieldTypes.filterType = "";
+                    fieldTypes.filterType = "";
                 }
                 break;
             }
             case XJOIN_TYPES.reference: {
-                this.fieldTypes.graphqlType = GRAPHQL_TYPES.Reference;
-                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
+                fieldTypes.graphqlType = GRAPHQL_TYPES.Reference;
+                fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
                 break;
             }
             case XJOIN_TYPES.array: {
-                this.fieldTypes.graphqlType = GRAPHQL_TYPES.StringArray; //TODO handle different array item types
-                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING_ARRAY;
+                fieldTypes.graphqlType = GRAPHQL_TYPES.StringArray; //TODO handle different array item types
+                fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING_ARRAY;
                 break;
             }
             case XJOIN_TYPES.byte: {
-                this.fieldTypes.graphqlType = GRAPHQL_TYPES.String;
-                this.fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
+                fieldTypes.graphqlType = GRAPHQL_TYPES.String;
+                fieldTypes.filterType = GRAPHQL_FILTER_TYPES.FILTER_STRING;
                 break;
             }
             default: {
@@ -182,6 +186,7 @@ export class Field {
             }
         }
 
+        this.fieldTypes = fieldTypes
         return this.fieldTypes;
     }
 
@@ -235,13 +240,16 @@ export class Field {
         if (!this.name) {
             throw Error(`field is missing name attribute`)
         }
-        if (!this.getTypeObject().type) {
+        const typeObject = this.getTypeObject()
+        if (typeObject === undefined) {
+            throw Error(`type object is undefined`)
+        }
+        if (!typeObject.type) {
             throw Error(`field ${this.name} is missing type attribute`)
         }
-        if (!this.getTypeObject().xjoinType) {
+        if (!typeObject.xjoinType) {
             throw Error(`field ${this.name} is missing xjoin.type attribute`)
         }
-
     }
 }
 
@@ -261,7 +269,7 @@ type FieldTypes = {
     filterType: string,
     enumeration: boolean,
     primaryKey: boolean,
-    avroType: string,
+    avroType: string|Type|Type[],
     xjoinType: string
 }
 

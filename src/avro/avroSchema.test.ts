@@ -10,7 +10,9 @@ describe('Field', () => {
             "name": "id",
             "type": {
                 "type": "string",
-                "xjoin.type": "string"
+                "xjoin.type": "string",
+                "xjoin.enumeration": false,
+                "xjoin.primary.key": false
             }
         }
 
@@ -84,7 +86,9 @@ describe('Field', () => {
             "name": "id",
             "type": [{
                 "type": "string",
-                "xjoin.type": "string"
+                "xjoin.type": "string",
+                "xjoin.enumeration": false,
+                "xjoin.primary.key": false
             }]
         };
 
@@ -160,7 +164,9 @@ describe('Field', () => {
                 "type": "null"
             }, {
                 "type": "string",
-                "xjoin.type": "string"
+                "xjoin.type": "string",
+                "xjoin.enumeration": false,
+                "xjoin.primary.key": false
             }]
         };
 
@@ -231,7 +237,9 @@ describe('Field', () => {
         test('throws an error when more than 2 types are specified', () => {
             fieldMultipleArrayJSON.type.push({
                 type: 'boolean',
-                'xjoin.type': 'boolean'
+                'xjoin.type': 'boolean',
+                "xjoin.enumeration": false,
+                "xjoin.primary.key": false
             });
             const field = plainToInstance(Field, fieldMultipleArrayJSON);
 

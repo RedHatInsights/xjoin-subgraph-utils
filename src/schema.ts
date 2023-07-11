@@ -1,4 +1,4 @@
-import got from "got";
+import got, {GotError} from "got";
 import {XJoinSubgraphUtilsError} from "./errors.js";
 
 export const ARTIFACTS_PATH = 'apis/registry/v2/groups/default/artifacts'
@@ -39,7 +39,8 @@ export class SchemaRegistry {
             await got.get(url);
             artifactExists = true;
         } catch (e) {
-            if (e && e.response && e.response.statusCode === 404) {
+            const gotError: GotError = <GotError> e;
+            if (gotError && gotError.response && gotError.response.statusCode === 404) {
                 artifactExists = false;
             } else {
                 throw new XJoinSubgraphUtilsError('unable to check if existing artifact exists', e);
