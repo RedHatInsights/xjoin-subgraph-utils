@@ -1,6 +1,6 @@
 {
   "name": "xjoin-subgraph-utils",
-  "version": "0.0.25",
+  "version": "0.0.26",
   "description": "Utilities to be used with projects based on the xjoin subgraph template.",
   "license": "MIT",
   "author": "Chris Kyrouac <ckyrouac@redhat.com>",
@@ -34,8 +34,7 @@
     "@types/got": "^9.6.12",
     "@types/morgan": "^1.9.4",
     "@types/pluralize": "^0.0.30",
-    "apollo-server-core": "^3.12.0",
-    "apollo-server-errors": "^3.3.1",
+    "apollo-server-express": "^3.12.0",
     "camelcase": "^6.3.0",
     "class-transformer": "^0.5.1",
     "express": "^4.18.2",
