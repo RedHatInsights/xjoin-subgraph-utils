@@ -1,5 +1,5 @@
-import {HttpErrorBadRequest, HttpErrorForbidden, HttpErrorUnauthorized} from "./errors";
-import {Logger} from "../logging";
+import {HttpErrorBadRequest, HttpErrorForbidden, HttpErrorUnauthorized} from "./errors.js";
+import {Logger} from "../logging/index.js";
 import {Request, Response, NextFunction} from 'express';
 
 export const IDENTITY_HEADER = 'x-rh-identity';

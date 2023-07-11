@@ -1,4 +1,4 @@
-import {UserInputError} from "apollo-server-express";
+import {UserInputError} from "apollo-server-errors";
 
 export function checkMin(min: number, value: number | null | undefined): void {
     if (value === null || value === undefined) {

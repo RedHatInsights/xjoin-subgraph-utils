@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 import {
-    GraphQLEnum, GraphQLField,
+    GraphQLField,
     GraphQLInput, GraphQLInputField,
     GraphQLQuery,
     GraphQLQueryParameter,
     GraphqlSchema,
     GraphQLObjectType, GraphQLType
-} from "../graphql/graphqlschema.js";
+} from "../graphql/index.js";
 import pluralize from "pluralize";
 import {AvroSchema, Field} from "./avroSchema.js";
 import {plainToInstance} from "class-transformer";

@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import {AvroSchemaParser} from "./avroSchemaParser.js";
-import {gql} from 'apollo-server-express';
+import {gql} from 'apollo-server-core';
 import {loadAvroSchemaFromFile, loadGraphqlSchemaFromFile} from "../test/utils.js";
 
 function enumerationTest(fileName: string) {

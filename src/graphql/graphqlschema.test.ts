@@ -8,7 +8,7 @@ import {
     GraphQLType
 } from "./graphqlschema.js";
 import {format} from 'prettier';
-import {loadGraphqlSchemaFromFile} from "../test";
+import {loadGraphqlSchemaFromFile} from "../test/utils.js";
 
 describe('GraphQLEnum', () => {
     test('constructor sets name', () => {

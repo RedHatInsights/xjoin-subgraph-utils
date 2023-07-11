@@ -4,7 +4,7 @@ import {
     ESEnumerationResponse,
     ESSearchParams,
     ESSearchResponse
-} from "./types";
+} from "./types.js";
 
 import {Client, ClientOptions} from '@elastic/elasticsearch';
 import {extractPage} from "./utils.js";

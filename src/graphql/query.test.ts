@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import {graphqlFiltersToESFilters, graphqlSelectionToESSourceFields} from "./query.js";
 import {SelectionNode} from "graphql";
-import {Kind} from "graphql/language/kinds";
-import {AvroSchemaParser} from "../avro";
+import {Kind} from "graphql";
+import {AvroSchemaParser} from "../avro/index.js";
 import {loadAvroSchemaFromFile} from "../test/utils.js";
 
 describe('graphqlSelectionToESSourceFields', () => {

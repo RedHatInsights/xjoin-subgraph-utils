@@ -1,4 +1,4 @@
-import {ApolloError} from "apollo-server-express";
+import {ApolloError} from "apollo-server-errors";
 
 export class ElasticSearchError extends ApolloError {
     constructor(originalError: any, message = 'Elastic search error', code = 'ELASTIC_SEARCH_ERROR') {
