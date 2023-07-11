@@ -3,7 +3,7 @@ This is an NPM package that contains common utility functions for xjoin subgraph
 
 ### Dependencies
 
-- Node.js v16
+- Node.js v18
 - NPM 8.1.0
 - Typescript 4.6.2
 

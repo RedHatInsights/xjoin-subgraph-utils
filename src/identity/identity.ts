@@ -4,7 +4,7 @@ import {Request, Response, NextFunction} from 'express';
 
 export const IDENTITY_HEADER = 'x-rh-identity';
 
-export default function identity(req: Request, res: Response, next: NextFunction): void {
+export function identity(req: Request, res: Response, next: NextFunction): void {
     const raw = req.header(IDENTITY_HEADER);
 
     if (raw === undefined) {
