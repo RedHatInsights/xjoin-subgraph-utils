@@ -1,6 +1,6 @@
 import got, {GotError} from "got";
 import {XJoinSubgraphUtilsError} from "./errors.js";
-import {Logger} from "./logging";
+import {Logger} from "./logging/logger.js";
 
 export const ARTIFACTS_PATH = 'apis/registry/v2/groups/default/artifacts'
 
