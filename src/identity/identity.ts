@@ -1,10 +1,10 @@
 import {HttpErrorBadRequest, HttpErrorForbidden, HttpErrorUnauthorized} from "./errors.js";
 import {Logger} from "../logging/index.js";
-import {Request, Response, NextFunction} from 'express';
+import express from 'express';
 
 export const IDENTITY_HEADER = 'x-rh-identity';
 
-export function identity(req: Request, res: Response, next: NextFunction): void {
+export function identity(req: express.Request, res: express.Response, next: express.NextFunction): void {
     const raw = req.header(IDENTITY_HEADER);
 
     if (raw === undefined) {
