@@ -86,6 +86,13 @@ export class SchemaRegistry {
                     }
                 )
             } catch (e) {
+                const gotError: GotError = <GotError> e;
+
+                if (gotError && gotError.response) {
+                    Logger.debug("Error when trying to create a new GraphQL schema", {
+                        statusCode: gotError.response.statusCode, message: gotError.response.message});
+                }
+
                 throw new XJoinSubgraphUtilsError('unable to create new schema', e);
             }
         }
