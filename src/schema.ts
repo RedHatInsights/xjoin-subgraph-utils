@@ -42,7 +42,11 @@ export class SchemaRegistry {
             artifactExists = true;
         } catch (e) {
             const gotError: GotError = <GotError> e;
-            Logger.debug("Error when trying to get existing GraphQL Schema", {error: gotError})
+
+            if (gotError && gotError.response) {
+                Logger.debug("Error when trying to get existing GraphQL Schema", {
+                    statusCode: gotError.response.statusCode, message: gotError.response.message});
+            }
 
             if (gotError && gotError.response && gotError.response.statusCode === 404) {
                 artifactExists = false;
