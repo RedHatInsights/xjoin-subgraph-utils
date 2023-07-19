@@ -90,7 +90,7 @@ export class SchemaRegistry {
 
                 if (gotError && gotError.response) {
                     Logger.debug("Error when trying to create a new GraphQL schema", {
-                        statusCode: gotError.response.statusCode, message: gotError.response.message});
+                        statusCode: gotError.response.statusCode, response: gotError.response});
                 }
 
                 throw new XJoinSubgraphUtilsError('unable to create new schema', e);
