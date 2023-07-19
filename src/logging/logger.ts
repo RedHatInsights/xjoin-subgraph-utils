@@ -13,7 +13,7 @@ const transports = [
 ]
 
 export const Logger = winston.createLogger({
-    level: 'info',
+    level: process.env.LOG_LEVEL || 'info',
     levels,
     format: winston.format.json(),
     transports,
