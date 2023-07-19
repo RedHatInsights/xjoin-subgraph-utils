@@ -14,11 +14,31 @@ export class SchemaRegistry {
     protocol: string;
     hostname: string;
     port: string;
+    baseUrl: string;
 
     constructor(args: SchemaRegistryParams) {
         this.protocol = args.protocol;
         this.hostname = args.hostname;
         this.port = args.port;
+        this.baseUrl = `${this.protocol}://${this.hostname}:${this.port}`;
+    }
+
+    async updateExistingGraphQLSchema(schemaName: string, schema: string) {
+        try {
+            //apicurio artifact already exists, this will update it with the new schema
+            Logger.debug("Updating existing GraphQL schema", {schemaName: schemaName})
+            await got.post(
+                `${this.baseUrl}/${ARTIFACTS_PATH}/${schemaName}/versions`,
+                {
+                    body: schema,
+                    headers: {
+                        'Content-Type': 'application/graphql',
+                        'X-Registry-ArtifactType': 'GRAPHQL'
+                    }
+                });
+        } catch (e) {
+            throw new XJoinSubgraphUtilsError('unable to update existing schema', e);
+        }
     }
 
     async registerGraphQLSchema(schemaName: string, schema: string) {
@@ -30,13 +50,11 @@ export class SchemaRegistry {
             throw new XJoinSubgraphUtilsError('schema parameter is required')
         }
 
-        const baseUrl = `${this.protocol}://${this.hostname}:${this.port}`;
-
         let artifactExists = false;
 
         //check if artifact exists
         try {
-            const url = `${baseUrl}/${ARTIFACTS_PATH}/${schemaName}`
+            const url = `${this.baseUrl}/${ARTIFACTS_PATH}/${schemaName}`
             Logger.debug("Checking if GraphQL schema exists", {url: url})
             await got.get(url);
             artifactExists = true;
@@ -56,26 +74,12 @@ export class SchemaRegistry {
         }
 
         if (artifactExists) {
-            try {
-                //apicurio artifact already exists, this will update it with the new schema
-                Logger.debug("Updating existing GraphQL schema", {schemaName: schemaName})
-                await got.post(
-                    `${baseUrl}/${ARTIFACTS_PATH}/${schemaName}/versions`,
-                    {
-                        body: schema,
-                        headers: {
-                            'Content-Type': 'application/graphql',
-                            'X-Registry-ArtifactType': 'GRAPHQL'
-                        }
-                    });
-            } catch (e) {
-                throw new XJoinSubgraphUtilsError('unable to update existing schema', e);
-            }
+            await this.updateExistingGraphQLSchema(schemaName, schema)
         } else {
             try {
                 Logger.debug("Creating new GraphQL schema", {schemaName: schemaName})
                 await got.post(
-                    `${baseUrl}/${ARTIFACTS_PATH}`,
+                    `${this.baseUrl}/${ARTIFACTS_PATH}`,
                     {
                         body: schema,
                         headers: {
@@ -93,7 +97,13 @@ export class SchemaRegistry {
                         statusCode: gotError.response.statusCode, response: gotError.response});
                 }
 
-                throw new XJoinSubgraphUtilsError('unable to create new schema', e);
+                if (gotError && gotError.response && gotError.response.statusCode === 409) {
+                    //artifact already exists, try updating it
+                    await this.updateExistingGraphQLSchema(schemaName, schema)
+                } else {
+                    throw new XJoinSubgraphUtilsError('unable to create new schema', e);
+                }
+
             }
         }
     }
