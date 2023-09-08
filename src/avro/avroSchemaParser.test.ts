@@ -162,6 +162,12 @@ describe('AvroSchemaParser', () => {
                 new AvroSchemaParser(JSON.stringify(avroSchema2));
             }).toThrow('avroSchema root field must contain at least one child field');
         });
+
+        test('scrubs metric fields from avro schema', async () => {
+            const parser = new AvroSchemaParser(loadAvroSchemaFromFile('with.metric.fields'));
+            expect(parser.avroSchema.fields).toHaveLength(1)
+            expect(parser.avroSchema.fields[0].name).toEqual('host')
+        });
     });
 
     describe('convertToGraphQL', () => {

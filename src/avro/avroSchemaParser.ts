@@ -23,6 +23,7 @@ export class AvroSchemaParser {
         }
 
         this.avroSchema = plainToInstance(AvroSchema, JSON.parse(avroSchema));
+        this.avroSchema = this.scrubAvroSchema()
 
         if (this.avroSchema.type !== 'record') {
             throw Error('avroSchema type must be "record"');
@@ -55,6 +56,22 @@ export class AvroSchemaParser {
         }
 
         this.graphqlSchema = new GraphqlSchema(this.avroSchema.fields[0].name);
+    }
+
+    /*
+     * Remove the internal metric fields from the schema before parsing
+     */
+    scrubAvroSchema(): AvroSchema {
+        const ignoreFields: string[] = ["__core_read_ms", "__core_write_ms", "__es_write_ms"]
+
+        const newFields: Field[] = [];
+        for (const field of this.avroSchema.fields) {
+            if (!ignoreFields.includes(field.name)) {
+                newFields.push(field)
+            }
+        }
+        this.avroSchema.fields = newFields;
+        return this.avroSchema
     }
 
     convertToGraphQL(): GraphqlSchema {
