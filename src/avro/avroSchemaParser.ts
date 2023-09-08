@@ -13,6 +13,14 @@ import {plainToInstance} from "class-transformer";
 import {enumerationName, capitalize, inputName, typeName, orderByScalarName} from "./avroUtils.js";
 import {GRAPHQL_FILTER_TYPES} from "../graphql/types.js";
 
+const ignoreFields: string[] = [
+    "__core_read_ms",
+    "__core_write_ms",
+    "__es_write_ms",
+    "__dbz_source_ts_ms",
+    "__dbz_ts_ms"
+]
+
 export class AvroSchemaParser {
     avroSchema: AvroSchema;
     graphqlSchema: GraphqlSchema;
@@ -62,8 +70,6 @@ export class AvroSchemaParser {
      * Remove the internal metric fields from the schema before parsing
      */
     scrubAvroSchema(): AvroSchema {
-        const ignoreFields: string[] = ["__core_read_ms", "__core_write_ms", "__es_write_ms"]
-
         const newFields: Field[] = [];
         for (const field of this.avroSchema.fields) {
             if (!ignoreFields.includes(field.name)) {
@@ -106,6 +112,10 @@ export class AvroSchemaParser {
                 continue;
             }
 
+            if (ignoreFields.includes(field.name)) {
+                continue;
+            }
+
             field.validate();
 
             const fieldGQLType = field.getGraphQLType();
@@ -129,6 +139,9 @@ export class AvroSchemaParser {
                     //loop over each subField to build the graphql entities (type, input, enum, etc.)
                     for (const subField of subFields) {
                         if (subField.xjoinIndex !== undefined && !subField.xjoinIndex) {
+                            continue;
+                        }
+                        if (ignoreFields.includes(subField.name)) {
                             continue;
                         }
 

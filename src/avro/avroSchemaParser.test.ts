@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import {AvroSchemaParser} from "./avroSchemaParser.js";
 import {gql} from 'apollo-server-core';
 import {loadAvroSchemaFromFile, loadGraphqlSchemaFromFile} from "../test/utils.js";
+import {GraphqlSchema} from "../graphql";
 
 function enumerationTest(fileName: string) {
     const avroSchema = JSON.parse(loadAvroSchemaFromFile(fileName));
@@ -167,6 +168,10 @@ describe('AvroSchemaParser', () => {
             const parser = new AvroSchemaParser(loadAvroSchemaFromFile('with.metric.fields'));
             expect(parser.avroSchema.fields).toHaveLength(1)
             expect(parser.avroSchema.fields[0].name).toEqual('host')
+
+            const gqlSchema: GraphqlSchema = parser.convertToGraphQL()
+            expect(gqlSchema.rootOrderByFields.includes("__dbz_ts_ms")).toBeFalsy()
+            expect(gqlSchema.rootOrderByFields.includes("__dbz_source_ts_ms")).toBeFalsy()
         });
     });
 
